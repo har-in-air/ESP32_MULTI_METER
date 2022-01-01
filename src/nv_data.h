@@ -9,8 +9,8 @@ typedef struct {
 	uint16_t averaging;
 	uint16_t busConv;
 	uint16_t shuntConv;
-	uint32_t scale;
-	uint32_t sampleSecs;
+	uint16_t scale;
+	uint16_t sampleSecs;
 	} CONFIG_t;
 
 extern CONFIG_t Config;

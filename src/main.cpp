@@ -8,7 +8,7 @@
 #include "tone.h"
 #include "ina226.h"
 
-const char* FirmwareRevision = "1.00";
+const char* FwRevision = "0.90";
 
 void switch_scale(int scale);
 
@@ -16,8 +16,8 @@ void switch_scale(int scale);
 // For SCALE_HI, shunt resistor is 0.05 ohms
 // For SCALE_LO, shunt resistor is 1.05 ohms
 void switch_scale(int scale) {
-	digitalWrite(pinFET1000, scale == SCALE_HI ? LOW : HIGH);  
-	digitalWrite(pinFET50, scale == SCALE_HI ? HIGH : LOW);  
+	digitalWrite(pinFET1, scale == SCALE_HI ? LOW : HIGH);  
+	digitalWrite(pinFET05, scale == SCALE_HI ? HIGH : LOW);  
 	}
 
 
@@ -26,8 +26,8 @@ void setup() {
 	pinMode(pinGate, INPUT); // external pullup, active low
 	pinMode(pinBtn1, INPUT_PULLUP);
 	pinMode(pinBtn2, INPUT_PULLUP);
-	pinMode(pinFET1000, OUTPUT); // external pulldown
-	pinMode(pinFET50, OUTPUT); // external pulldown
+	pinMode(pinFET1, OUTPUT); // external pulldown
+	pinMode(pinFET05, OUTPUT); // external pulldown
 	switch_scale(SCALE_HI);
 
 	Wire.begin(pinSDA,pinSCL); 
@@ -35,7 +35,7 @@ void setup() {
 
 	Serial.begin(115200);
 	Serial.println();
-	Serial.printf("Esp32-INA226 v%s compiled on %s at %s\n\n", FirmwareRevision, __DATE__, __TIME__);
+	Serial.printf("ESP32_INA226 v%s compiled on %s at %s\n\n", FwRevision, __DATE__, __TIME__);
 
 	uint16_t val;
 	ina226_read_reg(REG_ID, &val);

@@ -13,9 +13,9 @@
 
 static const char* TAG = "wifi_cfg";
 
-extern const char* FirmwareRevision;
+extern const char* FwRevision;
 
-const char* szAPSSID = "Esp32INA226";
+const char* szAPSSID = "ESP32_INA226";
 const char* szAPPassword = "123456789";
 
 AsyncWebServer* pServer = NULL;
@@ -29,11 +29,13 @@ static void index_page_handler(AsyncWebServerRequest *request);
 static void set_defaults_handler(AsyncWebServerRequest *request);
 static void css_handler(AsyncWebServerRequest *request);
 static void get_handler(AsyncWebServerRequest *request);
+static void restart_handler(AsyncWebServerRequest *request);
+
 
 // Replace %txt% placeholder 
 static String string_processor(const String& var){
 	if(var == "FW_REV"){
-		return FirmwareRevision;
+		return FwRevision;
 		}
 	else
 	if(var == "AVG_0"){
@@ -146,48 +148,47 @@ static void restart_handler(AsyncWebServerRequest *request) {
 
 static void get_handler(AsyncWebServerRequest *request) {
     String inputMessage;
-    bool bConfigChange = false;
-    // Google Sheet update option
+    bool bChange = false;
     if (request->hasParam("avg")) {
         inputMessage = request->getParam("avg")->value();
-        bConfigChange = true; 
+        bChange = true; 
     	Config.averaging = (uint16_t)inputMessage.toInt();
         }
     if (request->hasParam("shuntConv")) {
         inputMessage = request->getParam("shuntConv")->value();
-        bConfigChange = true; 
+        bChange = true; 
     	Config.shuntConv = (uint16_t)inputMessage.toInt();
         }
     if (request->hasParam("busConv")) {
         inputMessage = request->getParam("busConv")->value();
-        bConfigChange = true; 
+        bChange = true; 
     	Config.busConv = (uint16_t)inputMessage.toInt();
         }
     if (request->hasParam("scale")) {
         inputMessage = request->getParam("scale")->value();
-        bConfigChange = true; 
-    	Config.scale = (uint32_t)inputMessage.toInt();
+        bChange = true; 
+    	Config.scale = (uint16_t)inputMessage.toInt();
         }
     if (request->hasParam("sampleSecs")) {
         inputMessage = request->getParam("sampleSecs")->value();
-        bConfigChange = true; 
-    	Config.sampleSecs = (uint32_t)inputMessage.toInt();
+        bChange = true; 
+    	Config.sampleSecs = (uint16_t)inputMessage.toInt();
         }
     if (request->hasParam("ssid")) {
         inputMessage = request->getParam("ssid")->value();
-        bConfigChange = true; 
+        bChange = true; 
         Config.ssid = inputMessage;
         }
     if (request->hasParam("password")) {
         inputMessage = request->getParam("password")->value();
-        bConfigChange = true; 
+        bChange = true; 
         Config.password = inputMessage;
         }
 
-    if (bConfigChange == true) {
+    if (bChange == true) {
         Serial.println("Options changed");
         nv_config_store(Config);
-        bConfigChange = false;
+        bChange = false;
         }
     request->send(200, "text/html", "Input Processed<br><a href=\"/\">Return to Home Page</a>");  
     }
@@ -197,10 +198,8 @@ static void wifi_start_as_AP() {
 	Serial.printf("Starting Access Point %s with password %s\n", szAPSSID, szAPPassword);
 	WiFi.softAP(szAPSSID, szAPPassword);
 	IPAddress IP = WiFi.softAPIP();
-	Serial.print("AP IP address: ");
+	Serial.print("AP IP address : ");
 	Serial.println(IP);
-	Serial.print("Local IP address: ");
-	Serial.println(WiFi.localIP());
 	}
 
 
@@ -223,7 +222,6 @@ static void wifi_start_as_station() {
 void wifi_init() {
     esp_wifi_start(); // necessary if esp_wifi_stop() was called before deep_sleep
     delay(100);
-	bool bAccessPoint = false;
 	if (Config.ssid == "") {
 		wifi_start_as_AP();
 		}
@@ -244,7 +242,7 @@ void wifi_init() {
     pServer->on("/get", HTTP_GET, get_handler);
     pServer->on("/restart", HTTP_GET, restart_handler);
 
-    // add support for OTA firmware update
+    // support for OTA firmware update using url http://<ip address>/update
     AsyncElegantOTA.begin(pServer);  
     pServer->begin();   
     }

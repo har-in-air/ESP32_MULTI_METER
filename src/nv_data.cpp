@@ -28,8 +28,8 @@ void  nv_config_load(CONFIG_t &config){
 		config.averaging = Prefs.getUShort("avg", DEFAULT_AVERAGE);
 		config.busConv = Prefs.getUShort("bConv", DEFAULT_BUS_CONV);
 		config.shuntConv = Prefs.getUShort("sConv", DEFAULT_SHUNT_CONV);
-		config.sampleSecs = Prefs.getUInt("smpSecs", DEFAULT_SAMPLE_SECS);
-		config.scale = Prefs.getUInt("scale", DEFAULT_SCALE);
+		config.sampleSecs = Prefs.getUShort("smpSecs", DEFAULT_SAMPLE_SECS);
+		config.scale = Prefs.getUShort("scale", DEFAULT_SCALE);
 		Prefs.end();
 		nv_config_print(config);
 		}
@@ -68,8 +68,8 @@ void nv_config_store(CONFIG_t &config){
 	Prefs.putUShort("avg", config.averaging); 
 	Prefs.putUShort("bConv", config.busConv); 
 	Prefs.putUShort("sConv", config.shuntConv); 
-	Prefs.putUInt("smpSecs", config.sampleSecs); 
-	Prefs.putUInt("scale", config.scale); 
+	Prefs.putUShort("smpSecs", config.sampleSecs); 
+	Prefs.putUShort("scale", config.scale); 
 	Prefs.end();
 	nv_config_print(config);
 	}

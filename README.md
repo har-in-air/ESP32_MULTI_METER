@@ -6,7 +6,7 @@ and load current.
 The bus voltage can be up to 40V. There are two ranges for current measurement : full-scale ~1.6A with a resolution of 50uA, and 78mA with a resolution of 2.4uA.
 
 The meter is accessed online via a web page. If an AP is not configured, the system boots up
-as a stand-alone Access Point and web server with SSID "ESP32INA226Meter" and password "123456789
+as a stand-alone Access Point and web server with SSID "ESP32_INA226" and password "123456789"
 .
 
 Once you connect to this AP, access the page http://192.168.4.1 and here you can configure an
