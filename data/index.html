@@ -1,0 +1,51 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>ESP32 INA226 Meter</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<h1>ESP32 INA226 Meter</h1>
+
+<div style="text-align:center;">
+<p>
+<span>Firmware Revision : </span><span id="fwRev">%FW_REV%</span>
+</p>
+</div>
+
+<div style="text-align:center;">
+<a href="/defaults"><button>Set Defaults</button></a>
+</div>
+
+<div style="text-align:center;">
+<a href="/restart"><button>Restart</button></a>
+</div>
+<p>
+
+<fieldset><legend>System Options</legend>
+<form action="/get">
+<div>
+<table>
+<tr><td>Internet Access Point SSID</td><td><input type="text" id="ssid" name=ssid value="%SSID%"></td></tr>
+<tr><td>Internet Access Point Password</td><td><input type="password" id="password" name=password value="%PASSWORD%"></td></tr>
+<tr><td>-----</td><td>-----</td></tr>
+<tr><td><label for="avg">Sample Averaging</label></td><td><select name="avg"><option value="0" %AVG_0%>1</option><option value="1" %AVG_1%>4</option></select></td></tr>
+<tr><td><label for="busConv">Bus Conversion Time</label></td><td><select name="busConv"><option value="0" %BUS_CONV_0%>140uS</option><option value="1" %BUS_CONV_1%>204uS</option><option value="2" %BUS_CONV_2%>332uS</option><option value="3" %BUS_CONV_3%>588uS</option></select></td></tr>
+<tr><td><label for="shuntConv">Shunt Conversion Time</label></td><td><select name="shuntConv"><option value="0" %SHUNT_CONV_0%>140uS</option><option value="1" %SHUNT_CONV_1%>204uS</option><option value="2" %SHUNT_CONV_2%>332uS</option><option value="3" %SHUNT_CONV_3%>588uS</option></select></td></tr>
+<tr><td>Sample Rate </td><td id="sampleRate">%SAMPLE_RATE% Hz</td></tr>
+<tr><td>-----</td><td>-----</td></tr>
+<tr><td>Sample Seconds</td><td><input type="number" id="sampleSecs" name=sampleSecs value="%SAMPLE_SECS%" min="%SAMPLE_SECS_MIN%" max="%SAMPLE_SECS_MAX%"></td></tr>
+<tr><td><label for="scale">Full Scale Current (Resolution)</label></td><td><select name="scale"><option value="0" %SCALE_0%>1.6A (50uA)</option><option value="1" %SCALE_1%>78mA (2.4uA)</option></select></td></tr>
+</table>
+<p>
+<div style="text-align:center;">
+<input type="submit" value="Submit" class="form-submit">
+</div>
+</p>
+</form>
+</fieldset>
+
+</body>
+</html>
