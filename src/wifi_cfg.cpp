@@ -79,6 +79,50 @@ static String string_processor(const String& var){
 		return ConfigTbl.cfgIndex == 9 ? "selected" : "";
 		}
 	else
+	if(var == "S0"){
+		return ConfigTbl.cfg[0].sampleRate ? String(ConfigTbl.cfg[0].sampleRate) : "--";
+		}
+	else
+	if(var == "S0"){
+		return ConfigTbl.cfg[0].sampleRate ? String(ConfigTbl.cfg[0].sampleRate) : "--";
+		}
+	else
+	if(var == "S1"){
+		return ConfigTbl.cfg[1].sampleRate ? String(ConfigTbl.cfg[1].sampleRate) : "--";
+		}
+	else
+	if(var == "S2"){
+		return ConfigTbl.cfg[2].sampleRate ? String(ConfigTbl.cfg[2].sampleRate) : "--";
+		}
+	else
+	if(var == "S3"){
+		return ConfigTbl.cfg[3].sampleRate ? String(ConfigTbl.cfg[3].sampleRate) : "--";
+		}
+	else
+	if(var == "S4"){
+		return ConfigTbl.cfg[4].sampleRate ? String(ConfigTbl.cfg[4].sampleRate) : "--";
+		}
+	else
+	if(var == "S5"){
+		return ConfigTbl.cfg[5].sampleRate ? String(ConfigTbl.cfg[5].sampleRate) : "--";
+		}
+	else
+	if(var == "S6"){
+		return ConfigTbl.cfg[6].sampleRate ? String(ConfigTbl.cfg[6].sampleRate) : "--";
+		}
+	else
+	if(var == "S7"){
+		return ConfigTbl.cfg[7].sampleRate ? String(ConfigTbl.cfg[7].sampleRate) : "--";
+		}
+	else
+	if(var == "S8"){
+		return ConfigTbl.cfg[8].sampleRate ? String(ConfigTbl.cfg[8].sampleRate) : "--";
+		}
+	else
+	if(var == "S9"){
+		return ConfigTbl.cfg[9].sampleRate ? String(ConfigTbl.cfg[9].sampleRate) : "--";
+		}
+	else
 	if(var == "SAMPLE_SECS_MIN"){
 		return String(SAMPLE_SECS_MIN);
 		}

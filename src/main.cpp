@@ -23,7 +23,7 @@ void switch_scale(int scale) {
 
 
 void setup() {
-	pinMode(pinAlert, INPUT_PULLUP); // external pullup, active low
+	pinMode(pinAlert, INPUT); // external pullup, active low
 	pinMode(pinGate, INPUT); // external pullup, active low
 	pinMode(pinBtn1, INPUT_PULLUP);
 	pinMode(pinBtn2, INPUT_PULLUP);
@@ -59,6 +59,7 @@ void setup() {
 
 	Serial.println("Calibrating continuous sample rates");
 	ina226_calibrate_sample_rates();
+	nv_config_store(ConfigTbl);
 
 	Serial.println("Starting web server");
 	if (!LittleFS.begin()){

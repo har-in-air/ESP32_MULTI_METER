@@ -1,13 +1,11 @@
 #ifndef NVDATA_H_
 #define NVDATA_H_
 
-//#include "ina226.h"
-
 #define SAMPLE_SECS_MIN       1
 #define SAMPLE_SECS_MAX       30
 
-#define SCALE_HI	0 // Full scale = 1.64A
-#define SCALE_LO	1 // Full scale = 78mA
+#define SCALE_HI	0 // Shunt R = 0.05 ohms, Full scale = 1.64A
+#define SCALE_LO	1 // Shunt R = 1.05 ohms, Full scale = 78mA
 
 #define DEFAULT_SCALE		    SCALE_HI
 #define DEFAULT_SAMPLE_SECS		SAMPLE_SECS_MIN  
