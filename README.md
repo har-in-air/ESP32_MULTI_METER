@@ -29,6 +29,10 @@ Restart, and the system will reboot as a station connected to the configured SSI
 * IRF7831 n-chan mosfet x 2 for switching shunt resistors for scale change.
 * PC817 opto-coupler for gated current measurement
 
+[Circuit Schematic](docs/esp32_ina226_schematic.pdf)
+
+The SS56 schottky diode has a Vf of ~0.2V. It acts as protection for the 1ohm shunt resistor when the low scale is used and the load is shorted.
+
 # Credits
 * [Range switching with FET switches](https://www.youtube.com/watch?v=xSEYPP5Xsi0)
 

@@ -18,17 +18,17 @@ void switch_scale(int scale);
 void switch_scale(int scale) {
 	digitalWrite(pinFET1, scale == SCALE_HI ? LOW : HIGH);  
 	digitalWrite(pinFET05, scale == SCALE_HI ? HIGH : LOW);  
+	Options.scale = scale;
 	}
 
 
 void setup() {
-	pinMode(pinAlert, INPUT); // external pullup, active low
+	pinMode(pinAlert, INPUT_PULLUP); // external pullup, active low
 	pinMode(pinGate, INPUT); // external pullup, active low
 	pinMode(pinBtn1, INPUT_PULLUP);
 	pinMode(pinBtn2, INPUT_PULLUP);
 	pinMode(pinFET1, OUTPUT); // external pulldown
 	pinMode(pinFET05, OUTPUT); // external pulldown
-	switch_scale(SCALE_HI);
 
 	Wire.begin(pinSDA,pinSCL); 
 	Wire.setClock(400000);
@@ -37,6 +37,11 @@ void setup() {
 	Serial.println();
 	Serial.printf("ESP32_INA226 v%s compiled on %s at %s\n\n", FwRevision, __DATE__, __TIME__);
 
+	nv_options_load(Options);
+	nv_config_load(ConfigTbl);
+
+	switch_scale(Options.scale);
+	
 	uint16_t val;
 	ina226_read_reg(REG_ID, &val);
 	if (val != 0x5449) {
@@ -46,18 +51,16 @@ void setup() {
 		}
 
 	ina226_reset();
-	//ina226_read_reg(REG_CFG, &val);
-	//Serial.printf("INA226 Reset Config Reg = 0x%04X\n", val);
-	//ina226_read_reg(REG_MASK, &val);
-	//Serial.printf("INA226 Reset Mask Reg = 0x%04X\n", val);
-	
-	nv_config_load(Config); 
-	ina226_config();
-	ina226_read_reg(REG_CFG, &val);
-	Serial.printf("INA226 Config Reg = 0x%04X\n", val);
-	ina226_read_reg(REG_MASK, &val);
-	Serial.printf("INA226 Mask Reg = 0x%04X\n", val);
+   	
+	Serial.println("Measuring one-shot sample times");
+	for (int inx = 0; inx < NUM_CFG; inx++) {
+		ina226_capture_oneshot(inx, Measure);
+		}
 
+	Serial.println("Calibrating continuous sample rates");
+	ina226_calibrate_sample_rates();
+
+	Serial.println("Starting web server");
 	if (!LittleFS.begin()){
 		Serial.println("LittleFS mount error");
 		return;
@@ -68,7 +71,8 @@ void setup() {
 
 void loop() {
 	//switch_scale(SCALE_MA);
-	//ina226_capture_samples(2*SAMPLES_PER_SEC);
+	//ina226_capture_samples(2000, Measure);
+	//Serial.printf("V = %.1fV\nIavg = %.1fmA\nSampleRate = %.1fHz\n\n", Measure.vavg, Measure.iavgma, Measure.sampleRate);
 	//switch_scale(SCALE_UA);
 	//ina226_capture_samples(2*SAMPLES_PER_SEC);
   	}

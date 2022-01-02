@@ -129,13 +129,19 @@ button {
 input[type="number"] {
 	clear: both;
 	float: left;
-	width: 120px;
+	width: 125px;
 	}
 
 select {
 	clear: both;
 	float: left;
-	width: 120px;
+	width: 125px;
+	}
+
+.cfg-select {
+	clear: both;
+	float: left;
+	width: 250px;
 	}
 		
 .form-submit {

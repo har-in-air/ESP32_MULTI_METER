@@ -1,75 +1,112 @@
 #include <Arduino.h>
 #include <Preferences.h>
-#include "ina226.h"
+//#include "ina226.h"
 #include "nv_data.h"
 
 Preferences Prefs;
-CONFIG_t Config;
+
+OPTIONS_t Options;
+CONFIG_TABLE_t ConfigTbl;
 
 #define MODE_READ_WRITE  false
 #define MODE_READ_ONLY   true
 
-#define DEFAULT_AVERAGE     	AVG_1
-#define DEFAULT_BUS_CONV    	CONV_332_US
-#define DEFAULT_SHUNT_CONV    	CONV_332_US  
-#define DEFAULT_SCALE		    SCALE_HI
-#define DEFAULT_SAMPLE_SECS		SAMPLE_SECS_MIN  
 
-
-void  nv_config_load(CONFIG_t &config){
-	if (Prefs.begin("config", MODE_READ_ONLY) == false) {
-		Serial.println("Preferences 'config' namespace not found, creating with defaults.");
+void  nv_options_load(OPTIONS_t &options){
+	if (Prefs.begin("options", MODE_READ_ONLY) == false) {
+		Serial.println("Preferences 'options' namespace not found, creating with defaults.");
 		Prefs.end();
-		nv_config_reset(config);
+		nv_options_reset(options);
 		} 
 	else {
-		config.ssid = Prefs.getString("ssid", "");
-		config.password = Prefs.getString("pwd", "");
-		config.averaging = Prefs.getUShort("avg", DEFAULT_AVERAGE);
-		config.busConv = Prefs.getUShort("bConv", DEFAULT_BUS_CONV);
-		config.shuntConv = Prefs.getUShort("sConv", DEFAULT_SHUNT_CONV);
-		config.sampleSecs = Prefs.getUShort("smpSecs", DEFAULT_SAMPLE_SECS);
-		config.scale = Prefs.getUShort("scale", DEFAULT_SCALE);
+		options.ssid = Prefs.getString("ssid", "");
+		options.password = Prefs.getString("pwd", "");
+		options.sampleSecs = Prefs.getUShort("smpSecs", DEFAULT_SAMPLE_SECS);
+		options.scale = Prefs.getUShort("scale", DEFAULT_SCALE);
 		Prefs.end();
-		nv_config_print(config);
+		nv_options_print(options);
 		}
 	}
 
 
-void nv_config_print(CONFIG_t &config) {
-	Serial.println("SSID = " + config.ssid);
-	Serial.println("averaging = " + String(config.averaging));
-	Serial.println("bus conversion = " + String(config.busConv));
-	Serial.println("shunt conversion = " + String(config.shuntConv));
-	Serial.println("scale = " + String(config.scale));
-	Serial.println("sample seconds = " + String(config.sampleSecs));
+void nv_options_print(OPTIONS_t &options) {
+	Serial.println("SSID = " + options.ssid);
+	Serial.println("Scale = " + String(options.scale));
+	Serial.println("Sample seconds = " + String(options.sampleSecs));
 	}
 
 
-void nv_config_reset(CONFIG_t &config) {
-	config.ssid = "";
-	config.password = "";
-	config.averaging = DEFAULT_AVERAGE;
-	config.busConv = DEFAULT_BUS_CONV; 
-	config.shuntConv = DEFAULT_SHUNT_CONV;
-	config.sampleSecs = DEFAULT_SAMPLE_SECS;
-	config.scale = DEFAULT_SCALE;
-	nv_config_store(config);
-	Serial.println("Set Defaults");
-	nv_config_print(config);
+void nv_options_reset(OPTIONS_t &options) {
+	options.ssid = "";
+	options.password = "";
+	options.sampleSecs = DEFAULT_SAMPLE_SECS;
+	options.scale = DEFAULT_SCALE;
+	nv_options_store(options);
+	Serial.println("Set Default Options");
+	nv_options_print(options);
 	}
 
 
-void nv_config_store(CONFIG_t &config){
-	Prefs.begin("config", MODE_READ_WRITE);
+void nv_options_store(OPTIONS_t &options){
+	Prefs.begin("options", MODE_READ_WRITE);
 	Prefs.clear(); 
-	Prefs.putString("ssid", config.ssid); 
-	Prefs.putString("pwd", config.password); 
-	Prefs.putUShort("avg", config.averaging); 
-	Prefs.putUShort("bConv", config.busConv); 
-	Prefs.putUShort("sConv", config.shuntConv); 
-	Prefs.putUShort("smpSecs", config.sampleSecs); 
-	Prefs.putUShort("scale", config.scale); 
+	Prefs.putString("ssid", options.ssid); 
+	Prefs.putString("pwd", options.password); 
+	Prefs.putUShort("smpSecs", options.sampleSecs); 
+	Prefs.putUShort("scale", options.scale); 
 	Prefs.end();
-	nv_config_print(config);
+	nv_options_print(options);
+	}
+
+
+void  nv_config_load(CONFIG_TABLE_t &configTbl){
+	if (Prefs.begin("config", MODE_READ_ONLY) == false) {
+		Serial.println("Preferences 'config' namespace not found, creating with defaults.");
+		Prefs.end();
+		nv_config_reset(configTbl);
+		} 
+	else {
+		if (Prefs.getBytesLength("config") != sizeof(CONFIG_TABLE_t)) {
+			Serial.println("Prefs : config <-> sizeof(CONFIG_TABLE_t) mismatch, resetting.");
+			Prefs.end();
+			nv_config_reset(configTbl);
+			}
+		else {
+			Prefs.getBytes("config", (void*)&configTbl, sizeof(CONFIG_TABLE_t));
+			Prefs.end();			
+			nv_config_print(configTbl);
+			}
+		}
+	}	
+
+
+void nv_config_store(CONFIG_TABLE_t &configTbl) {
+	Prefs.begin("config", MODE_READ_WRITE);
+	Prefs.clear();
+	Prefs.putBytes("config", (const void*)&configTbl, sizeof(CONFIG_TABLE_t) );
+	Prefs.end();
+	}	
+
+
+void nv_config_reset(CONFIG_TABLE_t &configTbl){
+	// ---------------------------------------------------------------- avg  bconv  sconv
+	configTbl.cfg[0].reg = 0x4000 | (0 << 8) | (2 << 6) | (0 << 3); // 1, 332uS, 140uS
+	configTbl.cfg[1].reg = 0x4000 | (0 << 8) | (2 << 6) | (1 << 3); // 1, 332uS, 204uS
+	configTbl.cfg[2].reg = 0x4000 | (0 << 8) | (2 << 6) | (2 << 3); // 1, 332uS, 332uS
+	configTbl.cfg[3].reg = 0x4000 | (0 << 8) | (2 << 6) | (3 << 3); // 1, 332uS, 588uS
+	configTbl.cfg[4].reg = 0x4000 | (0 << 8) | (2 << 6) | (4 << 3); // 1, 332uS, 1100uS
+
+	configTbl.cfg[5].reg = 0x4000 | (1 << 8) | (2 << 6) | (0 << 3); // 4, 332uS, 140uS
+	configTbl.cfg[6].reg = 0x4000 | (1 << 8) | (2 << 6) | (1 << 3); // 4, 332uS, 204uS
+	configTbl.cfg[7].reg = 0x4000 | (1 << 8) | (2 << 6) | (2 << 3); // 4, 332uS, 332uS
+	configTbl.cfg[8].reg = 0x4000 | (1 << 8) | (2 << 6) | (3 << 3); // 4, 332uS, 588uS
+	configTbl.cfg[9].reg = 0x4000 | (1 << 8) | (2 << 6) | (4 << 3); // 4, 332uS, 1100uS
+
+	configTbl.cfgIndex = DEFAULT_CFG_INDEX;
+	nv_config_store(configTbl);
+	nv_config_print(configTbl);
+	}
+
+void nv_config_print(CONFIG_TABLE_t &configTbl) {
+	Serial.println("Config Index = " + String(configTbl.cfgIndex));
 	}

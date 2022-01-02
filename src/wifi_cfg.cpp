@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <ESPmDNS.h>
 #include <FS.h>
 #include <LittleFS.h>
 #include <AsyncTCP.h>
@@ -38,12 +39,44 @@ static String string_processor(const String& var){
 		return FwRevision;
 		}
 	else
-	if(var == "AVG_0"){
-		return Config.averaging == 0 ? "selected" : "";
+	if(var == "C0"){
+		return ConfigTbl.cfgIndex == 0 ? "selected" : "";
 		}
 	else
-	if(var == "AVG_1"){
-		return Config.averaging == 1 ? "selected" : "";
+	if(var == "C1"){
+		return ConfigTbl.cfgIndex == 1 ? "selected" : "";
+		}
+	else
+	if(var == "C2"){
+		return ConfigTbl.cfgIndex == 2 ? "selected" : "";
+		}
+	else
+	if(var == "C3"){
+		return ConfigTbl.cfgIndex == 3 ? "selected" : "";
+		}
+	else
+	if(var == "C4"){
+		return ConfigTbl.cfgIndex == 4 ? "selected" : "";
+		}
+	else
+	if(var == "C5"){
+		return ConfigTbl.cfgIndex == 5 ? "selected" : "";
+		}
+	else
+	if(var == "C6"){
+		return ConfigTbl.cfgIndex == 6 ? "selected" : "";
+		}
+	else
+	if(var == "C7"){
+		return ConfigTbl.cfgIndex == 7 ? "selected" : "";
+		}
+	else
+	if(var == "C8"){
+		return ConfigTbl.cfgIndex == 8 ? "selected" : "";
+		}
+	else
+	if(var == "C9"){
+		return ConfigTbl.cfgIndex == 9 ? "selected" : "";
 		}
 	else
 	if(var == "SAMPLE_SECS_MIN"){
@@ -54,60 +87,24 @@ static String string_processor(const String& var){
 		return String(SAMPLE_SECS_MAX);
 		}
 	else
-	if(var == "BUS_CONV_0"){
-		return Config.busConv == 0 ? "selected" : "";
+	if(var == "SCALE_HI"){
+		return Options.scale == 0 ? "selected" : "";
 		}
 	else
-	if(var == "BUS_CONV_1"){
-		return Config.busConv == 1 ? "selected" : "";
-		}
-	else
-	if(var == "BUS_CONV_2"){
-		return Config.busConv == 2 ? "selected" : "";
-		}
-	else
-	if(var == "BUS_CONV_3"){
-		return Config.busConv == 3 ? "selected" : "";
-		}
-	else
-	if(var == "SHUNT_CONV_0"){
-		return Config.shuntConv == 0 ? "selected" : "";
-		}
-	else
-	if(var == "SHUNT_CONV_1"){
-		return Config.shuntConv == 1 ? "selected" : "";
-		}
-	else
-	if(var == "SHUNT_CONV_2"){
-		return Config.shuntConv == 2 ? "selected" : "";
-		}
-	else
-	if(var == "SHUNT_CONV_3"){
-		return Config.shuntConv == 3 ? "selected" : "";
-		}
-	else
-	if(var == "SCALE_0"){
-		return Config.scale == 0 ? "selected" : "";
-		}
-	else
-	if(var == "SCALE_1"){
-		return Config.scale == 1 ? "selected" : "";
+	if(var == "SCALE_LO"){
+		return Options.scale == 1 ? "selected" : "";
 		}
 	else
 	if(var == "SAMPLE_SECS"){
-		return String(Config.sampleSecs);
-		}
-	else
-	if(var == "SAMPLE_RATE"){
-		return String(SampleRate);
+		return String(Options.sampleSecs);
 		}
 	else
 	if(var == "SSID"){
-		return Config.ssid;
+		return Options.ssid;
 		}
 	else
 	if(var == "PASSWORD"){
-		return Config.password;
+		return Options.password;
 		}
 	else return "?";
 	}
@@ -124,7 +121,6 @@ static void not_found_handler(AsyncWebServerRequest *request) {
 	}
 
 static void index_page_handler(AsyncWebServerRequest *request) {
-	ina226_get_sample_rate();
     request->send(LittleFS, "/index.html", String(), false, string_processor);
     }
 
@@ -133,7 +129,8 @@ static void css_handler(AsyncWebServerRequest *request){
     }
 
 static void set_defaults_handler(AsyncWebServerRequest *request) {
-    nv_config_reset(Config);
+	nv_config_reset(ConfigTbl);
+	nv_options_reset(Options);
     request->send(200, "text/html", "Default options set<br><a href=\"/\">Return to Home Page</a>");  
     }
 
@@ -149,45 +146,36 @@ static void restart_handler(AsyncWebServerRequest *request) {
 static void get_handler(AsyncWebServerRequest *request) {
     String inputMessage;
     bool bChange = false;
-    if (request->hasParam("avg")) {
-        inputMessage = request->getParam("avg")->value();
+    if (request->hasParam("cfgInx")) {
+        inputMessage = request->getParam("cfgInx")->value();
         bChange = true; 
-    	Config.averaging = (uint16_t)inputMessage.toInt();
-        }
-    if (request->hasParam("shuntConv")) {
-        inputMessage = request->getParam("shuntConv")->value();
-        bChange = true; 
-    	Config.shuntConv = (uint16_t)inputMessage.toInt();
-        }
-    if (request->hasParam("busConv")) {
-        inputMessage = request->getParam("busConv")->value();
-        bChange = true; 
-    	Config.busConv = (uint16_t)inputMessage.toInt();
+    	ConfigTbl.cfgIndex = (uint16_t)inputMessage.toInt();
         }
     if (request->hasParam("scale")) {
         inputMessage = request->getParam("scale")->value();
         bChange = true; 
-    	Config.scale = (uint16_t)inputMessage.toInt();
+    	Options.scale = (uint16_t)inputMessage.toInt();
         }
     if (request->hasParam("sampleSecs")) {
         inputMessage = request->getParam("sampleSecs")->value();
         bChange = true; 
-    	Config.sampleSecs = (uint16_t)inputMessage.toInt();
+    	Options.sampleSecs = (uint16_t)inputMessage.toInt();
         }
     if (request->hasParam("ssid")) {
         inputMessage = request->getParam("ssid")->value();
         bChange = true; 
-        Config.ssid = inputMessage;
+        Options.ssid = inputMessage;
         }
     if (request->hasParam("password")) {
         inputMessage = request->getParam("password")->value();
         bChange = true; 
-        Config.password = inputMessage;
+        Options.password = inputMessage;
         }
 
     if (bChange == true) {
         Serial.println("Options changed");
-        nv_config_store(Config);
+        nv_config_store(ConfigTbl);
+		nv_options_store(Options);
         bChange = false;
         }
     request->send(200, "text/html", "Input Processed<br><a href=\"/\">Return to Home Page</a>");  
@@ -204,9 +192,9 @@ static void wifi_start_as_AP() {
 
 
 static void wifi_start_as_station() {
-	Serial.printf("Connecting as station to SSID %s\n", Config.ssid);
+	Serial.printf("Connecting as station to SSID %s\n", Options.ssid);
     WiFi.mode(WIFI_STA);
-    WiFi.begin(Config.ssid.c_str(), Config.password.c_str());
+    WiFi.begin(Options.ssid.c_str(), Options.password.c_str());
     if (WiFi.waitForConnectResult(10000UL) != WL_CONNECTED) {
     	Serial.printf("Connection failed!\n");
     	wifi_start_as_AP();
@@ -222,13 +210,16 @@ static void wifi_start_as_station() {
 void wifi_init() {
     esp_wifi_start(); // necessary if esp_wifi_stop() was called before deep_sleep
     delay(100);
-	if (Config.ssid == "") {
+	if (Options.ssid == "") {
 		wifi_start_as_AP();
 		}
 	else {
 		wifi_start_as_station();
 		}
 	
+	if (!MDNS.begin("esp32")) { // Use http://esp32.local for web server page
+		Serial.println("Error starting mDNS service");
+	    }
     pServer = new AsyncWebServer(80);
     if (pServer == NULL) {
         ESP_LOGE(TAG, "Error creating AsyncWebServer!");
@@ -245,6 +236,7 @@ void wifi_init() {
     // support for OTA firmware update using url http://<ip address>/update
     AsyncElegantOTA.begin(pServer);  
     pServer->begin();   
+	MDNS.addService("http", "tcp", 80);
     }
 
 
