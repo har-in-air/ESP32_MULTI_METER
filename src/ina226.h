@@ -10,7 +10,7 @@
 #define REG_ALERT	0x07
 #define REG_ID		0xFE
 
-#define MAX_SAMPLES		20000
+#define MAX_SAMPLES		10000
 
 typedef struct {
 	int   cfgIndex;

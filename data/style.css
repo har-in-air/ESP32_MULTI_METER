@@ -231,9 +231,9 @@ background-image: -webkit-gradient(
 button {
 	margin-bottom:1rem;
 	border-radius:0.5em;
-	background:#558ED5;
+	background: #0066A2;
 	padding:0.3em 0.3em;
-	width:30%;
+	width: 25%;
 	color:white;
 	font-size:100%;
 	}

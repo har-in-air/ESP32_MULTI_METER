@@ -198,6 +198,7 @@ function on_close(event) {
 function on_message(event) {
 	let view = new Int16Array(event.data);
 	let len = view.length / 2;
+	ChartInst.destroy();
 	Time = [];
 	Data_mA = [];
 	Data_V = [];
@@ -211,7 +212,6 @@ function on_message(event) {
 		Data_mA.push(ima);
 		Data_V.push(v);
 		}  
-	ChartInst.destroy();
 	new_chart();
 	init_sliders();
 	update_chart();
@@ -224,7 +224,7 @@ function init_button() {
 	}
 
 function on_capture(event) {
-	var nsamples = 2000;
+	var nsamples = 3000;
 	//var nsamples = (1+ Math.random()*499).toFixed(0);
 	var jsonObj = {};
 	jsonObj["action"] = "capture";
