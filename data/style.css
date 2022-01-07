@@ -1,11 +1,17 @@
 body{
-	max-width:65%;
+	/*max-width:65%;*/
 	margin:0 auto;
 	font-family:arial;
 	font-size:100%;
 	text-align:left;
 	color:black;
 	background-color:#d6d0bf;
+	}
+
+.center {
+	margin: auto;
+	width : 80%;
+	justify-items: center;
 	}
 
 ul{
@@ -115,17 +121,6 @@ footer {
 	font-size:60%;
 	}
 	
-button {
-	margin-bottom:1rem;
-	border-radius:0.5em;
-	background:#0066A2;
-	padding:0.3em 0.3em;
-	align-self:center;
-	width:25%;
-	color:white;
-	font-size:100%;
-	}
-
 input[type="number"] {
 	clear: both;
 	float: left;
@@ -159,3 +154,90 @@ p {
 	font-size:100%;
 	}
 
+
+.panel {
+	display: grid;
+	grid-gap: 3em;
+	justify-items: center;
+ }
+
+.hdr {  grid-area: 1 / 1 / span 1 / span 3;}
+.istats { color: rgb(209, 20, 61);grid-area: 2 / 1 / span 1 / span 1;}
+.chrt { width : 1000px; height : 500px; margin-bottom: 50px; grid-area: 2 / 2 / span 1 / span 1;}
+.vstats { color: rgb(34, 73, 228);grid-area: 2 / 3 / span 1 / span 1;}
+.buttons { width : 800px; height : 200px; grid-area: 3 / 1 / span 1 / span 3;}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  grid-gap: 50px;
+  padding: 10px;
+  justify-items: center;
+}
+
+.grid-container > div {
+  text-align: center;
+  padding: 20px 50px;
+  font-size: 30px;
+}
+
+section.range-slider {
+position: relative; 
+width: 800px;
+height: 100px;
+margin: auto;
+text-align: center;
+}
+
+section.range-slider input[type="range"] {
+pointer-events: none;
+position: absolute;
+-webkit-appearance: none;
+-webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+border: none;
+border-radius: 4px;
+background: #f1efef;
+box-shadow: inset 0 1px 0 0 #cdc6c6, inset 0 -1px 0 0 #d9d4d4;
+-webkit-box-shadow: inset 0 1px 0 0 #cdc6c6, inset 0 -1px 0 0 #d9d4d4;
+overflow: hidden;
+left: 0;
+top: 50px;
+width: 800px;
+outline: none;
+height: 20px;
+padding: 0px;
+}
+
+section.range-slider input[type="range"]::-webkit-slider-thumb {
+pointer-events: all;
+position: relative;
+z-index: 1;
+outline: 0;
+-webkit-appearance: none;
+width: 20px;
+height: 20px;
+border: none;
+border-radius: 4px;
+background-image: -webkit-gradient(
+	linear,
+	left top,
+	left bottom,
+	color-stop(0%, #dad8da),
+	color-stop(100%, #413f41)
+);
+}
+
+
+button {
+	margin-bottom:1rem;
+	border-radius:0.5em;
+	background:#558ED5;
+	padding:0.3em 0.3em;
+	width:30%;
+	color:white;
+	font-size:100%;
+	}
+
+button:active {
+	transform: translateY(2px);
+  }

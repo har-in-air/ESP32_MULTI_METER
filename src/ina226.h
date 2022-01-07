@@ -10,17 +10,23 @@
 #define REG_ALERT	0x07
 #define REG_ID		0xFE
 
-#define MAX_SAMPLES			10000
+#define MAX_SAMPLES		20000
 
 typedef struct {
+	int   cfgIndex;
+	int   scale;
+	int   nSamples;
+	float sampleRate; // Hz
 	float vavg; // volts
 	float vmax;
 	float vmin;
 	float iavgma; // mA
 	float imaxma;
 	float iminma;
-	float sampleRate; // Hz
 } MEASURE_t;
+
+extern int NumSamples;
+extern int16_t Buffer[];
 
 extern MEASURE_t Measure;
 
@@ -28,8 +34,8 @@ void	ina226_write_reg(uint8_t regAddr, uint16_t data);
 int 	ina226_read_reg(uint8_t regAddr, uint16_t* pdata);
 void	ina226_reset();
 void	ina226_config(int cfgIndex, bool bOneShot);
-void	ina226_capture_continuous(int cfgIndex, int32_t nSamples, MEASURE_t &measure);
-void	ina226_capture_oneshot(int cfgIndex, MEASURE_t &measure);
+void	ina226_capture_continuous(MEASURE_t &measure, int16_t buffer[]);
+void	ina226_capture_oneshot(MEASURE_t &measure);
 void	ina226_calibrate_sample_rates();
 
 #endif

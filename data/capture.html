@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+<link rel="stylesheet" type="text/css" href="style.css">  
+</head>
+
+<body>
+<div class="grid-container">
+	<div class="hdr">ESP32 INA226 Current & Voltage Meter</div>
+	<div class="istats" id="istats">iStats</div>
+	<div class="chrt">
+	  <canvas id="myChart"> </canvas>
+	  <p>
+      <section class="range-slider">
+        <span class="rangeValues" style="text-align:center"></span>
+        <input id="slider0" value="0" min="0" max="" type="range" />
+        <input id="slider1" value="1" min="0" max="" type="range" />
+      </section>
+	</div>  
+	<div class="vstats" id="vstats">vStats</div>
+	<div class="buttons"><button id="capture">Capture</button></div>
+</div>
+</body>
+</html>
+
+<script src="chart.js"></script>
+<script src="index.js"></script>
+

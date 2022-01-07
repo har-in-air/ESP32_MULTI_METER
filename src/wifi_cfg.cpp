@@ -6,7 +6,7 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <AsyncElegantOTA.h>
-#include <esp_wifi.h>
+#include <ArduinoJson.h>
 #include "config.h"
 #include "nv_data.h"
 #include "ina226.h"
@@ -20,18 +20,31 @@ const char* szAPSSID = "ESP32_INA226";
 const char* szAPPassword = "123456789";
 
 AsyncWebServer* pServer = NULL;
+AsyncWebSocket ws("/ws");
 
-static void wifi_start_as_AP();
+uint32_t clientID;
+bool bConnected = false;
+bool bCapture = false;
+
+void socket_handle_message(void *arg, uint8_t *data, size_t len);
+void socket_event_handler(AsyncWebSocket *server,
+             AsyncWebSocketClient *client,
+             AwsEventType          type,
+             void                 *arg,
+             uint8_t              *data,
+             size_t                len);
+
+
+static void wifi_start_as_ap();
 static void wifi_start_as_station();
 
 static String string_processor(const String& var);
 static void not_found_handler(AsyncWebServerRequest *request);
 static void index_page_handler(AsyncWebServerRequest *request);
 static void set_defaults_handler(AsyncWebServerRequest *request);
-static void css_handler(AsyncWebServerRequest *request);
 static void get_handler(AsyncWebServerRequest *request);
 static void restart_handler(AsyncWebServerRequest *request);
-
+static void capture_handler(AsyncWebServerRequest *request);
 
 // Replace %txt% placeholder 
 static String string_processor(const String& var){
@@ -154,12 +167,6 @@ static String string_processor(const String& var){
 	}
 
 
-void wifi_off() {
-    WiFi.mode(WIFI_MODE_NULL);
-    esp_wifi_stop();
-    delay(100);
-    }
-
 static void not_found_handler(AsyncWebServerRequest *request) {
 	request->send(404, "text/plain", "Not found");
 	}
@@ -168,8 +175,8 @@ static void index_page_handler(AsyncWebServerRequest *request) {
     request->send(LittleFS, "/index.html", String(), false, string_processor);
     }
 
-static void css_handler(AsyncWebServerRequest *request){
-    request->send(LittleFS, "/style.css", "text/css");
+static void capture_handler(AsyncWebServerRequest *request) {
+    request->send(LittleFS, "/capture.html", String(), false, string_processor);
     }
 
 static void set_defaults_handler(AsyncWebServerRequest *request) {
@@ -226,7 +233,7 @@ static void get_handler(AsyncWebServerRequest *request) {
     }
 
 
-static void wifi_start_as_AP() {
+static void wifi_start_as_ap() {
 	Serial.printf("Starting Access Point %s with password %s\n", szAPSSID, szAPPassword);
 	WiFi.softAP(szAPSSID, szAPPassword);
 	IPAddress IP = WiFi.softAPIP();
@@ -241,7 +248,7 @@ static void wifi_start_as_station() {
     WiFi.begin(Options.ssid.c_str(), Options.password.c_str());
     if (WiFi.waitForConnectResult(10000UL) != WL_CONNECTED) {
     	Serial.printf("Connection failed!\n");
-    	wifi_start_as_AP();
+    	wifi_start_as_ap();
     	}
 	else {
     	Serial.println();
@@ -252,10 +259,9 @@ static void wifi_start_as_station() {
 
 
 void wifi_init() {
-    esp_wifi_start(); // necessary if esp_wifi_stop() was called before deep_sleep
     delay(100);
 	if (Options.ssid == "") {
-		wifi_start_as_AP();
+		wifi_start_as_ap();
 		}
 	else {
 		wifi_start_as_station();
@@ -269,13 +275,15 @@ void wifi_init() {
         ESP_LOGE(TAG, "Error creating AsyncWebServer!");
         while(1);
         }
-
+	ws.onEvent(socket_event_handler);
+	pServer->addHandler(&ws);
     pServer->onNotFound(not_found_handler);
     pServer->on("/", HTTP_GET, index_page_handler);
-    pServer->on("/style.css", HTTP_GET, css_handler);
+    pServer->on("/capture", HTTP_GET, capture_handler);
     pServer->on("/defaults", HTTP_GET, set_defaults_handler);
     pServer->on("/get", HTTP_GET, get_handler);
     pServer->on("/restart", HTTP_GET, restart_handler);
+    pServer->serveStatic("/", LittleFS, "/");
 
     // support for OTA firmware update using url http://<ip address>/update
     AsyncElegantOTA.begin(pServer);  
@@ -284,3 +292,59 @@ void wifi_init() {
     }
 
 
+void socket_event_handler(AsyncWebSocket *server,
+             AsyncWebSocketClient *client,
+             AwsEventType          type,
+             void                 *arg,
+             uint8_t              *data,
+             size_t                len) {
+
+    switch (type) {
+        case WS_EVT_CONNECT:
+            Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+			clientID = client->id();
+			bConnected = true;
+            break;
+        case WS_EVT_DISCONNECT:
+            Serial.printf("WebSocket client #%u disconnected\n", client->id());
+			bConnected = false;
+			clientID = 0;
+            break;
+        case WS_EVT_DATA:
+            socket_handle_message(arg, data, len);
+            break;
+        case WS_EVT_PONG:
+        case WS_EVT_ERROR:
+            break;
+    	}
+	}
+
+
+void socket_handle_message(void *arg, uint8_t *data, size_t len) {
+    AwsFrameInfo *info = (AwsFrameInfo*)arg;
+    if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+        const uint8_t size = JSON_OBJECT_SIZE(3);
+        StaticJsonDocument<size> json;
+        DeserializationError err = deserializeJson(json, data);
+        if (err) {
+            Serial.print(F("deserializeJson() failed with code "));
+            Serial.println(err.c_str());
+            return;
+			}
+
+        const char *szAction = json["action"];
+        const char *szSamples = json["samples"];
+        const char *szScale = json["scale"];
+
+		Serial.printf("json[\"samples\"]= %s\n", szSamples);
+
+        int nSamples = strtol(szSamples, NULL, 10);
+		if (nSamples > 0  && nSamples < MAX_SAMPLES) {
+			NumSamples = nSamples;
+			}
+        if (strcmp(szAction, "capture") == 0) {
+			bCapture = true;
+	        }
+	Serial.printf("Received socket message : [action : %s, samples : %d, scale : %s]\n", szAction, NumSamples, szScale);
+    }
+}

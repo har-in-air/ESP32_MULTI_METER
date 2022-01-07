@@ -51,18 +51,23 @@ void setup() {
 		}
 
 	ina226_reset();
+
    	
 	Serial.println("Measuring one-shot sample times");
 	for (int inx = 0; inx < NUM_CFG; inx++) {
-		ina226_capture_oneshot(inx, Measure);
+		Measure.cfgIndex = inx;
+		Measure.scale = SCALE_HI;
+		ina226_capture_oneshot(Measure);
 		}
 
+#if 0
 	Serial.println("Calibrating continuous sample rates");
 	ina226_calibrate_sample_rates();
 	nv_config_store(ConfigTbl);
+#endif
 
 	Serial.println("Starting web server");
-	if (!LittleFS.begin()){
+	if (!LittleFS.begin(true)){
 		Serial.println("LittleFS mount error");
 		return;
 		}  
@@ -71,11 +76,25 @@ void setup() {
 
 
 void loop() {
+	ws.cleanupClients();
+	if (bCapture) {
+		bCapture = false;
+		Measure.cfgIndex = 2;
+		Measure.scale = SCALE_HI;
+		Measure.nSamples = NumSamples;
+		Serial.printf("Capturing %d samples\n", NumSamples );
+		ina226_capture_continuous(Measure, Buffer);
+		if (bConnected) { 
+     		Serial.println("Transmitting samples");
+			ws.binary(clientID, (uint8_t*)Buffer, NumSamples*4); // needs size in bytes
+			}
+		}
+	}
 	//switch_scale(SCALE_MA);
 	//ina226_capture_samples(2000, Measure);
 	//Serial.printf("V = %.1fV\nIavg = %.1fmA\nSampleRate = %.1fHz\n\n", Measure.vavg, Measure.iavgma, Measure.sampleRate);
 	//switch_scale(SCALE_UA);
 	//ina226_capture_samples(2*SAMPLES_PER_SEC);
-  	}
+ //  	}
 
 
