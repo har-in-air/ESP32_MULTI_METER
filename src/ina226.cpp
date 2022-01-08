@@ -11,6 +11,17 @@ int16_t Buffer[MAX_SAMPLES*2];
 
 MEASURE_t Measure;
 
+static void switch_scale(int scale);
+
+// switch on one of the FETs, other is turned off
+// For SCALE_HI, shunt resistor is 0.05 ohms
+// For SCALE_LO, shunt resistor is 1.05 ohms
+static void switch_scale(int scale) {
+	digitalWrite(pinFET1, scale == SCALE_HI ? LOW : HIGH);  
+	digitalWrite(pinFET05, scale == SCALE_HI ? HIGH : LOW);  
+	Options.scale = scale;
+	}
+
 void ina226_write_reg(uint8_t regAddr, uint16_t data) {
 	Wire.beginTransmission(INA226_I2C_ADDR);  
 	Wire.write(regAddr);
@@ -53,8 +64,11 @@ int ina226_read_reg(uint8_t regAddr, uint16_t* pdata) {
 // Full scale = (32767 * 1.25) mV = 40.95875V
 
 void ina226_capture_oneshot(MEASURE_t &measure) {
+	switch_scale(measure.scale);
+	// conversion ready -> alert pin goes low
+	ina226_write_reg(REG_MASK, 0x0400);
 	// configure for one-shot bus and shunt adc conversion
-	ina226_config(measure.cfgIndex, true);
+	ina226_write_reg(REG_CFG, measure.cfg);
 	uint32_t tstart = micros();
 	// pinAlert pulled up to 3v3, active low on conversion complete
 	while (digitalRead(pinAlert) == HIGH);
@@ -67,13 +81,13 @@ void ina226_capture_oneshot(MEASURE_t &measure) {
 	ina226_read_reg(REG_SHUNT, &reg_shunt); 
 	ina226_read_reg(REG_VBUS, &reg_bus); 
 	// clear alert flag
-	ina226_read_reg(REG_MASK, &reg_mask); 
-	int16_t sval = (int16_t)reg_shunt;
+	//ina226_read_reg(REG_MASK, &reg_mask); 
+	int16_t data_i16 = (int16_t)reg_shunt;
 	if (measure.scale == SCALE_HI) {
-		measure.iavgma = sval*0.05f;
+		measure.iavgma = data_i16*0.05f;
 		}
 	else {
-		measure.iavgma = sval*0.002381f;
+		measure.iavgma = data_i16*0.002381f;
 		}	
 	measure.iminma = measure.iavgma;
 	measure.imaxma = measure.iavgma;
@@ -82,40 +96,43 @@ void ina226_capture_oneshot(MEASURE_t &measure) {
 	measure.vmax = measure.vavg;
 	measure.vmin = measure.vavg;
 	measure.sampleRate = 1000000.0f/(float)us;
-	Serial.printf("OneShot : [%02d] %s %dus %dHz %.1fV %.3fmA\n", measure.cfgIndex, measure.scale == SCALE_LO ? "LO" : "HI", us, (int)(measure.sampleRate+0.5f), measure.vavg, measure.iavgma);
+	Serial.printf("OneShot : 0x%04X %s %dus %dHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", us, (int)(measure.sampleRate+0.5f), measure.vavg, measure.iavgma);
 	}
 
 
-void ina226_capture_continuous(MEASURE_t &measure, int16_t buffer[]) {
-	int16_t smax, smin, bmax, bmin; // shunt and bus raw readings 
+void ina226_capture_triggered(MEASURE_t &measure, int16_t buffer[]) {
+	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 
 	int32_t savg, bavg; // averaging accumulators
+	uint16_t reg_mask, reg_bus, reg_shunt;
 	smax = bmax = -32768;
 	smin = bmin = 32767;
 	savg = bavg = 0;
-	uint16_t reg_mask, reg_bus, reg_shunt;
-	int16_t sval;
-	// configure for continuous bus and shunt adc conversions
-	ina226_config(measure.cfgIndex, false);
+	switch_scale(measure.scale);
+	// conversion ready -> alert pin goes low
+	ina226_write_reg(REG_MASK, 0x0400);
 	uint32_t tstart = micros();
+
 	for (int inx = 0; inx < measure.nSamples; inx++){
+		uint32_t t1 = micros();
+		ina226_write_reg(REG_CFG, measure.cfg);
+		// pinAlert pulled up to 3v3, active low on conversion complete
 		while (digitalRead(pinAlert) == HIGH);
 		// read shunt and bus ADCs
 		ina226_read_reg(REG_SHUNT, &reg_shunt); 
 		ina226_read_reg(REG_VBUS, &reg_bus); 
 		// clear alert flag
-		ina226_read_reg(REG_MASK, &reg_mask); 
-
-		sval = (int16_t)reg_shunt;
-		buffer[2*inx] = sval;
-		savg += i32(sval);
-		if (sval > smax) smax = sval;
-		if (sval < smin) smin = sval;
-
-		sval = (int16_t)reg_bus;
-		buffer[2*inx+1] = sval; 
-		bavg += i32(sval);
-		if (sval > bmax) bmax = sval;
-		if (sval < bmin) bmin = sval;
+		//ina226_read_reg(REG_MASK, &reg_mask); 
+		data_i16 = (int16_t)reg_shunt;
+		buffer[2*inx] = data_i16;
+		savg += i32(data_i16);
+		if (data_i16 > smax) smax = data_i16;
+		if (data_i16 < smin) smin = data_i16;
+		data_i16 = (int16_t)reg_bus;
+		buffer[2*inx+1] = data_i16; 
+		bavg += i32(data_i16);
+		if (data_i16 > bmax) bmax = data_i16;
+		if (data_i16 < bmin) bmin = data_i16;
+		while ((micros() - t1) < measure.periodUs);
 		}
 	uint32_t us = micros() - tstart;
 	measure.sampleRate = (1000000.0f*(float)measure.nSamples)/(float)us;
@@ -137,7 +154,61 @@ void ina226_capture_continuous(MEASURE_t &measure, int16_t buffer[]) {
 	measure.vmax = bmax*0.00125f; 
 	measure.vmin = bmin*0.00125f; 
 	// vload = vbus - vshunt
-	Serial.printf("Continuous : [%02d] %s %dHz %.1fV %.3fmA\n", measure.cfgIndex, measure.scale == SCALE_LO ? "LO" : "HI", (int)(measure.sampleRate+0.5f), measure.vavg, measure.iavgma);
+	Serial.printf("Triggered : 0x%04X %s %.1fHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", measure.sampleRate, measure.vavg, measure.iavgma);
+	}
+
+
+void ina226_capture_continuous(MEASURE_t &measure, int16_t buffer[]) {
+	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 
+	int32_t savg, bavg; // averaging accumulators
+	uint16_t reg_mask, reg_bus, reg_shunt;
+	smax = bmax = -32768;
+	smin = bmin = 32767;
+	savg = bavg = 0;
+	switch_scale(measure.scale);
+	// conversion ready -> alert pin goes low
+	ina226_write_reg(REG_MASK, 0x0400);
+	// configure for continuous bus and shunt adc conversions
+	ina226_write_reg(REG_CFG, measure.cfg);
+	uint32_t tstart = micros();
+	for (int inx = 0; inx < measure.nSamples; inx++){
+		while (digitalRead(pinAlert) == HIGH);
+		// read shunt and bus ADCs
+		ina226_read_reg(REG_SHUNT, &reg_shunt); 
+		ina226_read_reg(REG_VBUS, &reg_bus); 
+		data_i16 = (int16_t)reg_shunt;
+		buffer[2*inx] = data_i16;
+		savg += i32(data_i16);
+		if (data_i16 > smax) smax = data_i16;
+		if (data_i16 < smin) smin = data_i16;
+
+		data_i16 = (int16_t)reg_bus;
+		buffer[2*inx+1] = data_i16; 
+		bavg += i32(data_i16);
+		if (data_i16 > bmax) bmax = data_i16;
+		if (data_i16 < bmin) bmin = data_i16;
+		}
+	uint32_t us = micros() - tstart;
+	measure.sampleRate = (1000000.0f*(float)measure.nSamples)/(float)us;
+	// convert shunt adc reading to mA
+	savg = savg / measure.nSamples;
+	if (measure.scale == SCALE_HI) {
+		measure.iavgma = savg*0.05f;
+		measure.imaxma = smax*0.05f;
+		measure.iminma = smin*0.05f;
+		}
+	else {
+		measure.iavgma = savg*0.002381f;
+		measure.imaxma = smax*0.002381f;
+		measure.iminma = smin*0.002381f;
+		}	
+	// convert bus adc reading to V
+	bavg = bavg / measure.nSamples;
+	measure.vavg = bavg*0.00125f; 
+	measure.vmax = bmax*0.00125f; 
+	measure.vmin = bmin*0.00125f; 
+	// vload = vbus - vshunt
+	Serial.printf("Continuous : 0x%04X %s %dHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", (int)(measure.sampleRate+0.5f), measure.vavg, measure.iavgma);
 	}
 
 
@@ -160,10 +231,9 @@ void ina226_config(int cfgIndex, bool bOneShot) {
 
 void ina226_calibrate_sample_rates() {
 	for (int inx = 0; inx < NUM_CFG; inx++) {
-		Measure.cfgIndex = inx;
+		Measure.cfg = ConfigTbl.cfg[inx].reg | 0x0007;
 		Measure.scale = SCALE_HI;
 		Measure.nSamples = 2000;
 		ina226_capture_continuous(Measure, Buffer);
-		ConfigTbl.cfg[inx].sampleRate = Measure.sampleRate;
 		}
 	}	

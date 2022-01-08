@@ -10,18 +10,6 @@
 
 const char* FwRevision = "0.90";
 
-void switch_scale(int scale);
-
-// switch on one of the FETs, other is turned off
-// For SCALE_HI, shunt resistor is 0.05 ohms
-// For SCALE_LO, shunt resistor is 1.05 ohms
-void switch_scale(int scale) {
-	digitalWrite(pinFET1, scale == SCALE_HI ? LOW : HIGH);  
-	digitalWrite(pinFET05, scale == SCALE_HI ? HIGH : LOW);  
-	Options.scale = scale;
-	}
-
-
 void setup() {
 	pinMode(pinAlert, INPUT); // external pullup, active low
 	pinMode(pinGate, INPUT); // external pullup, active low
@@ -31,7 +19,7 @@ void setup() {
 	pinMode(pinFET05, OUTPUT); // external pulldown
 
 	Wire.begin(pinSDA,pinSCL); 
-	Wire.setClock(400000);
+	Wire.setClock(2000000);
 
 	Serial.begin(115200);
 	Serial.println();
@@ -39,8 +27,6 @@ void setup() {
 
 	nv_options_load(Options);
 	nv_config_load(ConfigTbl);
-
-	switch_scale(Options.scale);
 	
 	uint16_t val;
 	ina226_read_reg(REG_ID, &val);
@@ -52,12 +38,23 @@ void setup() {
 
 	ina226_reset();
 
+	//nv_options_reset(Options);
+	//nv_config_reset(ConfigTbl);
    	
+	Measure.scale = SCALE_LO;
+
 	Serial.println("Measuring one-shot sample times");
 	for (int inx = 0; inx < NUM_CFG; inx++) {
-		Measure.cfgIndex = inx;
-		Measure.scale = SCALE_HI;
+		Measure.cfg = ConfigTbl.cfg[inx].reg | 0x0003;
 		ina226_capture_oneshot(Measure);
+		}
+
+	Serial.println("Measuring triggered sample-rates");
+	for (int inx = 0; inx < NUM_CFG; inx++) {
+		Measure.cfg = ConfigTbl.cfg[inx].reg | 0x0003;
+		Measure.periodUs = ConfigTbl.cfg[inx].periodUs;
+		Measure.nSamples = 2000;
+		ina226_capture_triggered(Measure, Buffer);
 		}
 
 #if 0
@@ -79,22 +76,17 @@ void loop() {
 	ws.cleanupClients();
 	if (bCapture) {
 		bCapture = false;
-		Measure.cfgIndex = 2;
-		Measure.scale = SCALE_HI;
+		Measure.cfg = ConfigTbl.cfg[0].reg | 0x0003;
+		Measure.scale = SCALE_LO;
 		Measure.nSamples = NumSamples;
+		Measure.periodUs = ConfigTbl.cfg[0].periodUs;
 		Serial.printf("Capturing %d samples\n", NumSamples );
-		ina226_capture_continuous(Measure, Buffer);
+		ina226_capture_triggered(Measure, Buffer);
 		if (bConnected) { 
      		Serial.println("Transmitting samples");
 			ws.binary(clientID, (uint8_t*)Buffer, NumSamples*4); // needs size in bytes
 			}
 		}
 	}
-	//switch_scale(SCALE_MA);
-	//ina226_capture_samples(2000, Measure);
-	//Serial.printf("V = %.1fV\nIavg = %.1fmA\nSampleRate = %.1fHz\n\n", Measure.vavg, Measure.iavgma, Measure.sampleRate);
-	//switch_scale(SCALE_UA);
-	//ina226_capture_samples(2*SAMPLES_PER_SEC);
- //  	}
 
 

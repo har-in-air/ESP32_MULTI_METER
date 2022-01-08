@@ -10,7 +10,7 @@
 #define DEFAULT_SCALE		    SCALE_HI
 #define DEFAULT_SAMPLE_SECS		SAMPLE_SECS_MIN  
 
-#define DEFAULT_CFG_INDEX    	2
+#define DEFAULT_CFG_INDEX    	0
 
 typedef struct {
 	String ssid;
@@ -21,10 +21,10 @@ typedef struct {
 
 typedef struct {
 	uint16_t reg;
-	uint16_t sampleRate;
+	uint32_t periodUs;
 	} CONFIG_t;
 
-#define NUM_CFG 10
+#define NUM_CFG 3
 
 typedef struct {
 	CONFIG_t cfg[NUM_CFG];

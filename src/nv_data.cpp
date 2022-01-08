@@ -89,21 +89,13 @@ void nv_config_store(CONFIG_TABLE_t &configTbl) {
 
 void nv_config_reset(CONFIG_TABLE_t &configTbl){
 	                                                                //avg bconv  sconv
-	configTbl.cfg[0].reg = 0x4000 | (0 << 8) | (2 << 6) | (0 << 3); // 1, 332uS, 140uS
-	configTbl.cfg[1].reg = 0x4000 | (0 << 8) | (2 << 6) | (1 << 3); // 1, 332uS, 204uS
-	configTbl.cfg[2].reg = 0x4000 | (0 << 8) | (2 << 6) | (2 << 3); // 1, 332uS, 332uS
-	configTbl.cfg[3].reg = 0x4000 | (0 << 8) | (2 << 6) | (3 << 3); // 1, 332uS, 588uS
-	configTbl.cfg[4].reg = 0x4000 | (0 << 8) | (2 << 6) | (4 << 3); // 1, 332uS, 1100uS
+	configTbl.cfg[0].reg = 0x4000 | (0 << 8) | (1 << 6) | (2 << 3); // 1, 140uS, 332uS
+	configTbl.cfg[0].periodUs = 1000UL;
+	configTbl.cfg[1].reg = 0x4000 | (0 << 8) | (1 << 6) | (4 << 3); // 1, 140uS, 1100uS
+	configTbl.cfg[1].periodUs = 2000UL;
+	configTbl.cfg[2].reg = 0x4000 | (1 << 8) | (2 << 6) | (2 << 3); // 4, 332uS, 332uS
+	configTbl.cfg[2].periodUs = 5000UL;
 
-	configTbl.cfg[5].reg = 0x4000 | (1 << 8) | (2 << 6) | (0 << 3); // 4, 332uS, 140uS
-	configTbl.cfg[6].reg = 0x4000 | (1 << 8) | (2 << 6) | (1 << 3); // 4, 332uS, 204uS
-	configTbl.cfg[7].reg = 0x4000 | (1 << 8) | (2 << 6) | (2 << 3); // 4, 332uS, 332uS
-	configTbl.cfg[8].reg = 0x4000 | (1 << 8) | (2 << 6) | (3 << 3); // 4, 332uS, 588uS
-	configTbl.cfg[9].reg = 0x4000 | (1 << 8) | (2 << 6) | (4 << 3); // 4, 332uS, 1100uS
-
-	for (int inx = 0; inx < NUM_CFG; inx++) {
-		configTbl.cfg[inx].sampleRate = 0; // undefined
-		}
 	configTbl.cfgIndex = DEFAULT_CFG_INDEX;
 	nv_config_store(configTbl);
 	nv_config_print(configTbl);
@@ -111,5 +103,8 @@ void nv_config_reset(CONFIG_TABLE_t &configTbl){
 	
 
 void nv_config_print(CONFIG_TABLE_t &configTbl) {
-	Serial.println("Config Index = " + String(configTbl.cfgIndex));
+	for (int inx = 0; inx < NUM_CFG; inx++) {
+		Serial.printf("Register = 0x%04X\n", configTbl.cfg[inx].reg);
+		Serial.printf("Sample Period = %dmS\n", configTbl.cfg[inx].periodUs/1000);
+		}
 	}

@@ -13,9 +13,12 @@
 #define MAX_SAMPLES		10000
 
 typedef struct {
-	int   cfgIndex;
+	// input
+	uint16_t cfg;
 	int   scale;
 	int   nSamples;
+	uint32_t periodUs;
+	// output
 	float sampleRate; // Hz
 	float vavg; // volts
 	float vmax;
@@ -35,6 +38,7 @@ int 	ina226_read_reg(uint8_t regAddr, uint16_t* pdata);
 void	ina226_reset();
 void	ina226_config(int cfgIndex, bool bOneShot);
 void	ina226_capture_continuous(MEASURE_t &measure, int16_t buffer[]);
+void 	ina226_capture_triggered(MEASURE_t &measure, int16_t buffer[]);
 void	ina226_capture_oneshot(MEASURE_t &measure);
 void	ina226_calibrate_sample_rates();
 
