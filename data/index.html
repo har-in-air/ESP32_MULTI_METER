@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<title>ESP32 INA226 Meter</title>
+<title>ESP32 INA226 Current & Voltage Meter</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <link rel="stylesheet" type="text/css" href="style.css">
@@ -9,57 +9,47 @@
 <body>
 
 <div class="center">	
-<h1>ESP32 INA226 Meter</h1>
+<h1>ESP32 INA226 Current & Voltage Meter</h1>
 </div>
+
 <p>
+
 <div style="text-align:center;">
-<span>Firmware Revision : </span><span id="fwRev">%FW_REV%</span>
+	<span>Firmware Revision : </span><span id="fwRev">%FW_REV%</span>
 </div>
+
 </p>
-<div style="text-align:center;">
-<a href="/defaults"><button>Set Defaults</button></a>
-</div>
 
 <div style="text-align:center;">
-<a href="/capture"><button>Capture</button></a>
+	<a href="/capture"><button>Capture</button></a>
 </div>
 
-<div style="text-align:center;">
-<a href="/restart"><button>Restart</button></a>
-</div>
 <p>
 
 <div class="center">
-<fieldset><legend>System Options</legend>
+<fieldset><legend>WiFi Access Point Credentials</legend>
 <form action="/get">
-<div>
+
+<div class="center">
 <table>
-<tr><td>Internet Access Point SSID</td><td><input type="text" id="ssid" name=ssid value="%SSID%"></td></tr>
-<tr><td>Internet Access Point Password</td><td><input type="password" id="password" name=password value="%PASSWORD%"></td></tr>
-<tr><td>---------------</td><td>---------------</td></tr>
-<tr><td><label for="cfgInx">Configuration : Avg, BConv, SConv, SampleRate</label></td>
-	<td><select name="cfgInx" class="cfg-select">
-		<option value="0" %C0%>1, 140us,  332uS, 1000Hz</option>
-		<option value="1" %C1%>1, 140uS, 1100uS,  500Hz</option>
-		<option value="2" %C2%>4, 332uS,  332uS,  200Hz</option>
-		</select>
-</td></tr>
-<tr><td><label for="scale">Current Full Scale : Maximum, Resolution</label></td>
-	<td><select name="scale">
-		<option value="0" %SCALE_HI%>1.6A, 50uA</option>
-		<option value="1" %SCALE_LO%>78mA, 2.4uA</option>
-		</select>
-</td></tr>
-<tr><td>Sample Seconds</td><td><input type="number" id="sampleSecs" name=sampleSecs value="%SAMPLE_SECS%" min="%SAMPLE_SECS_MIN%" max="%SAMPLE_SECS_MAX%"></td></tr>
+<tr><td>SSID</td><td><input type="text" id="ssid" name=ssid value="%SSID%"></td></tr>
+<tr><td>Password</td><td><input type="password" id="password" name=password value="%PASSWORD%"></td></tr>
 </table>
+</div>
 <p>
-<div style="text-align:center;">
+<div class="center">
 <input type="submit" value="Submit" class="form-submit">
 </div>
-</p>
+
 </form>
 </fieldset>
 </div>
 
+<p>
+
+<div style="text-align:center;">
+	<a href="/restart"><button>Restart</button></a>
+</div>
+	
 </body>
 </html>

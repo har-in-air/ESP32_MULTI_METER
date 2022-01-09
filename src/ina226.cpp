@@ -6,9 +6,18 @@
 
 #define i32(x) ((int32_t)(x))
 
-int16_t Buffer[MAX_SAMPLES*2];
+
+CONFIG_t Config[NUM_CFG] = {
+	{ 0x4000 | (0 << 8) | (1 << 6) | (2 << 3), // 1, 140uS, 332uS
+	  1000UL },
+	{ 0x4000 | (0 << 8) | (1 << 6) | (4 << 3), // 1, 140uS, 1100uS
+	  2000UL },
+	{ 0x4000 | (1 << 8) | (2 << 6) | (2 << 3), // 4, 332uS, 332uS
+	  5000UL }
+	};
 
 MEASURE_t Measure;
+int16_t Buffer[1+MAX_SAMPLES*2];
 
 static void switch_scale(int scale);
 
@@ -18,7 +27,6 @@ static void switch_scale(int scale);
 static void switch_scale(int scale) {
 	digitalWrite(pinFET1, scale == SCALE_HI ? LOW : HIGH);  
 	digitalWrite(pinFET05, scale == SCALE_HI ? HIGH : LOW);  
-	Options.scale = scale;
 	}
 
 void ina226_write_reg(uint8_t regAddr, uint16_t data) {
@@ -218,21 +226,3 @@ void ina226_reset() {
 	delay(50);
 	}
 
-
-void ina226_config(int cfgIndex, bool bOneShot) {
-	// conversion ready -> alert pin goes low
-	ina226_write_reg(REG_MASK, 0x0400);
-	// averaging and conversion times from configuration options + one-shot / continuous bus and shunt readings
-	uint16_t cfg = ConfigTbl.cfg[cfgIndex].reg | (bOneShot ? 0x0003 : 0x0007);
-	ina226_write_reg(REG_CFG, cfg);
-	}
-
-
-void ina226_calibrate_sample_rates() {
-	for (int inx = 0; inx < NUM_CFG; inx++) {
-		Measure.cfg = ConfigTbl.cfg[inx].reg | 0x0007;
-		Measure.scale = SCALE_HI;
-		Measure.nSamples = 2000;
-		ina226_capture_continuous(Measure, Buffer);
-		}
-	}	

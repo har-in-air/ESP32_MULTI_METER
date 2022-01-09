@@ -22,18 +22,18 @@
 		<table>
 		<tr><td><label for="cfgInx">Configuration : Avg, BConv, SConv, SampleRate</label></td>
 			<td><select id="cfgInx" name="cfgInx" class="cfg-select">
-				<option value="0" %C0%>1, 140us,  332uS, 1000Hz</option>
-				<option value="1" %C1%>1, 140uS, 1100uS,  500Hz</option>
-				<option value="2" %C2%>4, 332uS,  332uS,  200Hz</option>
+				<option value="0" "selected">1, 140us,  332uS, 1000Hz</option>
+				<option value="1" >1, 140uS, 1100uS,  500Hz</option>
+				<option value="2" >4, 332uS,  332uS,  200Hz</option>
 				</select>
 		</td></tr>
 		<tr><td><label for="scale">Current Full Scale : Maximum, Resolution</label></td>
 			<td><select id="scale" name="scale">
-				<option value="0" %SCALE_HI%>1.6A, 50uA</option>
-				<option value="1" %SCALE_LO%>78mA, 2.4uA</option>
+				<option value="0" "selected">1.6A, 50uA</option>
+				<option value="1" >78mA, 2.4uA</option>
 				</select>
 		</td></tr>
-		<tr><td>Sample Seconds</td><td><input type="number" id="sampleSecs" name=sampleSecs value="%SAMPLE_SECS%" min="%SAMPLE_SECS_MIN%" max="%SAMPLE_SECS_MAX%"></td></tr>
+		<tr><td>Sample Seconds</td><td><input type="number" id="sampleSecs" name=sampleSecs value="1" min="%SAMPLE_SECS_MIN%" max="%SAMPLE_SECS_MAX%"></td></tr>
 		</table>		
 		<button id="capture">Capture</button>
 	</div>

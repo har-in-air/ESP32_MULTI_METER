@@ -52,36 +52,12 @@ static String string_processor(const String& var){
 		return FwRevision;
 		}
 	else
-	if(var == "C0"){
-		return ConfigTbl.cfgIndex == 0 ? "selected" : "";
-		}
-	else
-	if(var == "C1"){
-		return ConfigTbl.cfgIndex == 1 ? "selected" : "";
-		}
-	else
-	if(var == "C2"){
-		return ConfigTbl.cfgIndex == 2 ? "selected" : "";
-		}
-	else
 	if(var == "SAMPLE_SECS_MIN"){
 		return String(SAMPLE_SECS_MIN);
 		}
 	else
 	if(var == "SAMPLE_SECS_MAX"){
 		return String(SAMPLE_SECS_MAX);
-		}
-	else
-	if(var == "SCALE_HI"){
-		return Options.scale == 0 ? "selected" : "";
-		}
-	else
-	if(var == "SCALE_LO"){
-		return Options.scale == 1 ? "selected" : "";
-		}
-	else
-	if(var == "SAMPLE_SECS"){
-		return String(Options.sampleSecs);
 		}
 	else
 	if(var == "SSID"){
@@ -108,7 +84,6 @@ static void capture_handler(AsyncWebServerRequest *request) {
     }
 
 static void set_defaults_handler(AsyncWebServerRequest *request) {
-	nv_config_reset(ConfigTbl);
 	nv_options_reset(Options);
     request->send(200, "text/html", "Default options set<br><a href=\"/\">Return to Home Page</a>");  
     }
@@ -125,21 +100,6 @@ static void restart_handler(AsyncWebServerRequest *request) {
 static void get_handler(AsyncWebServerRequest *request) {
     String inputMessage;
     bool bChange = false;
-    if (request->hasParam("cfgInx")) {
-        inputMessage = request->getParam("cfgInx")->value();
-        bChange = true; 
-    	ConfigTbl.cfgIndex = (uint16_t)inputMessage.toInt();
-        }
-    if (request->hasParam("scale")) {
-        inputMessage = request->getParam("scale")->value();
-        bChange = true; 
-    	Options.scale = (uint16_t)inputMessage.toInt();
-        }
-    if (request->hasParam("sampleSecs")) {
-        inputMessage = request->getParam("sampleSecs")->value();
-        bChange = true; 
-    	Options.sampleSecs = (uint16_t)inputMessage.toInt();
-        }
     if (request->hasParam("ssid")) {
         inputMessage = request->getParam("ssid")->value();
         bChange = true; 
@@ -153,7 +113,6 @@ static void get_handler(AsyncWebServerRequest *request) {
 
     if (bChange == true) {
         Serial.println("Options changed");
-        nv_config_store(ConfigTbl);
 		nv_options_store(Options);
         bChange = false;
         }
@@ -272,14 +231,14 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 
         int cfgIndex = strtol(szCfgIndex, NULL, 10);
         int sampleSeconds = strtol(szSampleSeconds, NULL, 10);
-		int sampleRate = 1000000/ConfigTbl.cfg[cfgIndex].periodUs;
+		int sampleRate = 1000000/Config[cfgIndex].periodUs;
 		int numSamples = sampleSeconds*sampleRate;
 		int scale = strtol(szScale, NULL, 10);
 		
-		Measure.cfg = ConfigTbl.cfg[cfgIndex].reg | 0x0003;
+		Measure.cfg = Config[cfgIndex].reg | 0x0003;
 		Measure.scale = scale;
 		Measure.nSamples = numSamples;
-		Measure.periodUs = ConfigTbl.cfg[cfgIndex].periodUs;
+		Measure.periodUs = Config[cfgIndex].periodUs;
 
         if (strcmp(szAction, "capture") == 0) {
 			bCapture = true;

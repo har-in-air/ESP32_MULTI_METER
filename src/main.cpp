@@ -26,7 +26,6 @@ void setup() {
 	Serial.printf("ESP32_INA226 v%s compiled on %s at %s\n\n", FwRevision, __DATE__, __TIME__);
 
 	nv_options_load(Options);
-	nv_config_load(ConfigTbl);
 	
 	uint16_t val;
 	ina226_read_reg(REG_ID, &val);
@@ -45,22 +44,18 @@ void setup() {
 
 	Serial.println("Measuring one-shot sample times");
 	for (int inx = 0; inx < NUM_CFG; inx++) {
-		Measure.cfg = ConfigTbl.cfg[inx].reg | 0x0003;
+		Measure.cfg = Config[inx].reg | 0x0003;
 		ina226_capture_oneshot(Measure);
 		}
 
 #if 0
 	Serial.println("Measuring triggered sample-rates");
 	for (int inx = 0; inx < NUM_CFG; inx++) {
-		Measure.cfg = ConfigTbl.cfg[inx].reg | 0x0003;
-		Measure.periodUs = ConfigTbl.cfg[inx].periodUs;
+		Measure.cfg = Config[inx].reg | 0x0003;
+		Measure.periodUs = Config[inx].periodUs;
 		Measure.nSamples = 2000;
 		ina226_capture_triggered(Measure, Buffer);
 		}
-
-	Serial.println("Calibrating continuous sample rates");
-	ina226_calibrate_sample_rates();
-	nv_config_store(ConfigTbl);
 #endif
 
 	Serial.println("Starting web server");

@@ -12,6 +12,13 @@
 
 #define MAX_SAMPLES		10000
 
+#define SAMPLE_SECS_MIN       1
+#define SAMPLE_SECS_MAX       30
+
+#define SCALE_HI	0 // Shunt R = 0.05 ohms, Full scale = 1.64A
+#define SCALE_LO	1 // Shunt R = 1.05 ohms, Full scale = 78mA
+
+
 typedef struct {
 	// input
 	uint16_t cfg;
@@ -28,8 +35,15 @@ typedef struct {
 	float iminma;
 } MEASURE_t;
 
-extern int16_t Buffer[];
+typedef struct {
+	uint16_t reg;
+	uint32_t periodUs;
+	} CONFIG_t;
 
+#define NUM_CFG 3
+
+extern int16_t Buffer[];
+extern CONFIG_t Config[];
 extern MEASURE_t Measure;
 
 void	ina226_write_reg(uint8_t regAddr, uint16_t data);
