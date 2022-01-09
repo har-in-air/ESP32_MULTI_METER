@@ -165,7 +165,7 @@ p {
 .istats { color: rgb(209, 20, 61);grid-area: 2 / 1 / span 1 / span 1;}
 .chrt { width : 1000px; height : 500px; margin-bottom: 50px; grid-area: 2 / 2 / span 1 / span 1;}
 .vstats { color: rgb(34, 73, 228);grid-area: 2 / 3 / span 1 / span 1;}
-.buttons { width : 800px; height : 200px; grid-area: 3 / 1 / span 1 / span 3;}
+.capture { width : 100%; grid-area: 3 / 1 / span 1 / span 3;}
 
 .grid-container {
   display: grid;

@@ -251,7 +251,7 @@ void socket_event_handler(AsyncWebSocket *server,
 void socket_handle_message(void *arg, uint8_t *data, size_t len) {
     AwsFrameInfo *info = (AwsFrameInfo*)arg;
     if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
-        const uint8_t size = JSON_OBJECT_SIZE(3);
+        const uint8_t size = JSON_OBJECT_SIZE(4);
         StaticJsonDocument<size> json;
         DeserializationError err = deserializeJson(json, data);
         if (err) {
@@ -261,18 +261,28 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 			}
 
         const char *szAction = json["action"];
-        const char *szSamples = json["samples"];
+        const char *szCfgIndex = json["cfgIndex"];
+        const char *szSampleSeconds = json["sampleSecs"];
         const char *szScale = json["scale"];
 
-		Serial.printf("json[\"samples\"]= %s\n", szSamples);
+		Serial.printf("json[\"action\"]= %s\n", szAction);
+		Serial.printf("json[\"cfgIndex\"]= %s\n", szCfgIndex);
+		Serial.printf("json[\"sampleSecs\"]= %s\n", szSampleSeconds);
+		Serial.printf("json[\"scale\"]= %s\n", szScale);
 
-        int nSamples = strtol(szSamples, NULL, 10);
-		if (nSamples > 0  && nSamples < MAX_SAMPLES) {
-			NumSamples = nSamples;
-			}
+        int cfgIndex = strtol(szCfgIndex, NULL, 10);
+        int sampleSeconds = strtol(szSampleSeconds, NULL, 10);
+		int sampleRate = 1000000/ConfigTbl.cfg[cfgIndex].periodUs;
+		int numSamples = sampleSeconds*sampleRate;
+		int scale = strtol(szScale, NULL, 10);
+		
+		Measure.cfg = ConfigTbl.cfg[cfgIndex].reg | 0x0003;
+		Measure.scale = scale;
+		Measure.nSamples = numSamples;
+		Measure.periodUs = ConfigTbl.cfg[cfgIndex].periodUs;
+
         if (strcmp(szAction, "capture") == 0) {
 			bCapture = true;
 	        }
-	Serial.printf("Received socket message : [action : %s, samples : %d, scale : %s]\n", szAction, NumSamples, szScale);
-    }
-}
+    	}
+	}

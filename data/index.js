@@ -197,18 +197,20 @@ function on_close(event) {
 
 function on_message(event) {
 	let view = new Int16Array(event.data);
-	let len = view.length / 2;
+	let len = (view.length - 1) / 2;
 	ChartInst.destroy();
 	Time = [];
 	Data_mA = [];
 	Data_V = [];
-	var iScale = 0.05;
+	//var scaleOpt = document.getElementById("scale").value;
+	//var iScale = scaleOpt == "0" ? 0.05 : 0.002381;
+	var iScale = view[0] == 0 ? 0.05 : 0.002381;
     var vScale = 0.00125;
 
 	for(var t = 0; t < len; t++){
 		Time.push(t);
-		var ima = view[2*t] * iScale;
-		var v = view[2*t+1] * vScale;
+		var ima = view[2*t+1] * iScale;
+		var v = view[2*t+2] * vScale;
 		Data_mA.push(ima);
 		Data_V.push(v);
 		}  
@@ -224,11 +226,15 @@ function init_button() {
 	}
 
 function on_capture(event) {
-	var nsamples = 3000;
+	var cfgIndex = document.getElementById("cfgInx").value;
+	var sampleSeconds = document.getElementById("sampleSecs").value;
+	var scale = document.getElementById("scale").value;
 	//var nsamples = (1+ Math.random()*499).toFixed(0);
 	var jsonObj = {};
 	jsonObj["action"] = "capture";
-	jsonObj["samples"] = nsamples.toString();
-	jsonObj["scale"] = "LO";
+	jsonObj["cfgIndex"] = cfgIndex;
+	//jsonObj["sampleSecs"] = nsamples.toString();
+	jsonObj["sampleSecs"] = sampleSeconds.toString();
+	jsonObj["scale"] = scale;
     websocket.send(JSON.stringify(jsonObj));
 	}

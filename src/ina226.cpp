@@ -6,7 +6,6 @@
 
 #define i32(x) ((int32_t)(x))
 
-int NumSamples;
 int16_t Buffer[MAX_SAMPLES*2];
 
 MEASURE_t Measure;
@@ -111,7 +110,7 @@ void ina226_capture_triggered(MEASURE_t &measure, int16_t buffer[]) {
 	// conversion ready -> alert pin goes low
 	ina226_write_reg(REG_MASK, 0x0400);
 	uint32_t tstart = micros();
-
+	buffer[0] = measure.scale;
 	for (int inx = 0; inx < measure.nSamples; inx++){
 		uint32_t t1 = micros();
 		ina226_write_reg(REG_CFG, measure.cfg);
@@ -120,15 +119,15 @@ void ina226_capture_triggered(MEASURE_t &measure, int16_t buffer[]) {
 		// read shunt and bus ADCs
 		ina226_read_reg(REG_SHUNT, &reg_shunt); 
 		ina226_read_reg(REG_VBUS, &reg_bus); 
-		// clear alert flag
-		//ina226_read_reg(REG_MASK, &reg_mask); 
+		
 		data_i16 = (int16_t)reg_shunt;
-		buffer[2*inx] = data_i16;
+		buffer[2*inx+1] = data_i16;
 		savg += i32(data_i16);
 		if (data_i16 > smax) smax = data_i16;
 		if (data_i16 < smin) smin = data_i16;
+
 		data_i16 = (int16_t)reg_bus;
-		buffer[2*inx+1] = data_i16; 
+		buffer[2*inx+2] = data_i16; 
 		bavg += i32(data_i16);
 		if (data_i16 > bmax) bmax = data_i16;
 		if (data_i16 < bmin) bmin = data_i16;

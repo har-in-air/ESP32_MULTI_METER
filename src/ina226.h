@@ -28,7 +28,6 @@ typedef struct {
 	float iminma;
 } MEASURE_t;
 
-extern int NumSamples;
 extern int16_t Buffer[];
 
 extern MEASURE_t Measure;

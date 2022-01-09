@@ -49,6 +49,7 @@ void setup() {
 		ina226_capture_oneshot(Measure);
 		}
 
+#if 0
 	Serial.println("Measuring triggered sample-rates");
 	for (int inx = 0; inx < NUM_CFG; inx++) {
 		Measure.cfg = ConfigTbl.cfg[inx].reg | 0x0003;
@@ -57,7 +58,6 @@ void setup() {
 		ina226_capture_triggered(Measure, Buffer);
 		}
 
-#if 0
 	Serial.println("Calibrating continuous sample rates");
 	ina226_calibrate_sample_rates();
 	nv_config_store(ConfigTbl);
@@ -76,15 +76,11 @@ void loop() {
 	ws.cleanupClients();
 	if (bCapture) {
 		bCapture = false;
-		Measure.cfg = ConfigTbl.cfg[0].reg | 0x0003;
-		Measure.scale = SCALE_LO;
-		Measure.nSamples = NumSamples;
-		Measure.periodUs = ConfigTbl.cfg[0].periodUs;
-		Serial.printf("Capturing %d samples\n", NumSamples );
+		Serial.printf("Capturing %d samples using cfg[%04X] and scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
 		ina226_capture_triggered(Measure, Buffer);
 		if (bConnected) { 
      		Serial.println("Transmitting samples");
-			ws.binary(clientID, (uint8_t*)Buffer, NumSamples*4); // needs size in bytes
+			ws.binary(clientID, (uint8_t*)Buffer, 2+Measure.nSamples*4); // needs size in bytes
 			}
 		}
 	}
