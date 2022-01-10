@@ -20,22 +20,25 @@
 	<div class="vstats" id="vstats">vStats</div>
 	<div class="capture">
 		<table>
-		<tr><td><label for="cfgInx">Configuration : Avg, BConv, SConv, SampleRate</label></td>
+		<tr><td><label for="cfgInx">Sample Rate</label></td>
 			<td><select id="cfgInx" name="cfgInx" class="cfg-select">
-				<option value="0" "selected">1, 140us,  332uS, 1000Hz</option>
-				<option value="1" >1, 140uS, 1100uS,  500Hz</option>
-				<option value="2" >4, 332uS,  332uS,  200Hz</option>
+				<option value="0" "selected">1000Hz : avg=1, vadc=140us, sadc=332uS</option>
+				<option value="1" >500Hz : avg=1, vadc=140uS, sadc=1100uS</option>
+				<option value="2" >200Hz : avg=4, vadc=332uS, sadc=332uS</option>
 				</select>
 		</td></tr>
-		<tr><td><label for="scale">Current Full Scale : Maximum, Resolution</label></td>
+		<tr><td><label for="scale">Current Range</label></td>
 			<td><select id="scale" name="scale">
-				<option value="0" "selected">1.6A, 50uA</option>
-				<option value="1" >78mA, 2.4uA</option>
+				<option value="0" "selected">FS=1638mA, res=50uA</option>
+				<option value="1" >FS=78mA, res=2.4uA</option>
 				</select>
 		</td></tr>
 		<tr><td>Sample Seconds</td><td><input type="number" id="sampleSecs" name=sampleSecs value="1" min="%SAMPLE_SECS_MIN%" max="%SAMPLE_SECS_MAX%"></td></tr>
 		</table>		
-		<button id="capture">Capture</button>
+		<div><button id="capture">Capture</button></div>
+		<div class="led-box">
+			<div class="led-green"></div>
+		</div>
 	</div>
 </div>
 </body>

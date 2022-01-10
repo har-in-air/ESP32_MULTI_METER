@@ -8,6 +8,7 @@ var Ctxt = document.getElementById("myChart").getContext("2d");
 Ctxt.canvas.width = 800;
 Ctxt.canvas.height = 400;
 
+var periodMs = 1;
 var Time = [];
 var Data_mA = [];
 var Data_V = [];
@@ -148,7 +149,7 @@ function update_chart() {
 	vAvg = vAvg/time_slice.length;
 	
 	var displayElement = document.getElementsByClassName("rangeValues")[0];
-	displayElement.innerHTML = "[" + min + "," + max + "]";
+	displayElement.innerHTML = "[" + min*periodMs + "," + max*periodMs + "]mS";
 	document.getElementById("istats").innerHTML = 
 		"iAvg : " + iAvg.toFixed(3) + "mA<p>" + 
 		"iMin : " + iMin.toFixed(3) + "mA<p>" + 
@@ -197,20 +198,19 @@ function on_close(event) {
 
 function on_message(event) {
 	let view = new Int16Array(event.data);
-	let len = (view.length - 1) / 2;
+	let len = (view.length - 2) / 2;
 	ChartInst.destroy();
 	Time = [];
 	Data_mA = [];
 	Data_V = [];
-	//var scaleOpt = document.getElementById("scale").value;
-	//var iScale = scaleOpt == "0" ? 0.05 : 0.002381;
-	var iScale = view[0] == 0 ? 0.05 : 0.002381;
+	periodMs = view[0];
+	var iScale = view[1] == 0 ? 0.05 : 0.002381;
     var vScale = 0.00125;
 
 	for(var t = 0; t < len; t++){
-		Time.push(t);
-		var ima = view[2*t+1] * iScale;
-		var v = view[2*t+2] * vScale;
+		Time.push(t*periodMs);
+		var ima = view[2*t+2] * iScale;
+		var v = view[2*t+3] * vScale;
 		Data_mA.push(ima);
 		Data_V.push(v);
 		}  
@@ -233,7 +233,6 @@ function on_capture(event) {
 	var jsonObj = {};
 	jsonObj["action"] = "capture";
 	jsonObj["cfgIndex"] = cfgIndex;
-	//jsonObj["sampleSecs"] = nsamples.toString();
 	jsonObj["sampleSecs"] = sampleSeconds.toString();
 	jsonObj["scale"] = scale;
     websocket.send(JSON.stringify(jsonObj));

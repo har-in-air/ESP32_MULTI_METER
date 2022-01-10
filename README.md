@@ -3,24 +3,33 @@
 An ESP32 module together with an INA226 current sensor is used to monitor bus voltage
 and load current.
 
-The bus voltage can be up to 40V. There are two ranges for current measurement : full-scale ~1.6A with a resolution of 50uA, and 78mA with a resolution of 2.4uA.
+The bus voltage can be up to 40V. 
 
-The meter is accessed online via a web page. If an AP is not configured, the system boots up
-as a stand-alone Access Point and web server with SSID "ESP32_INA226" and password "123456789"
-.
+There are two ranges for current measurement : 
+* full-scale 1638mA with a resolution of 50uA
+* full-scale 78mA with a resolution of 2.4uA
 
-Once you connect to this AP, access the page http://192.168.4.1 and here you can configure an
-AP SSID and password.
+There are 3 options for sampling rate :
+* 1000Hz : 1mS sample period, no sample averaging, vbus ADC conversion time 140uS and shunt ADC conversion time 332uS
+* 500Hz : 2mS sample period, no sample averaging, vbus ADC conversion time 140uS and shunt ADC conversion time 1100uS
+* 200Hz : 5mS sample period, averaging 4 samples, vbus ADC conversion time 140uS and shunt ADC conversion time 332uS
 
-Restart, and the system will reboot as a station connected to the configured SSID.
+The meter is accessed online via a web page. If an external WiFi Access Point has not been configured, the system boots up
+as a stand-alone Access Point and web server with SSID `ESP32_INA226`, no password required.
 
+Connect to this AP, then access the page `http://192.168.4.1` or `http://esp32.local` and here you can configure an
+external WiFi AP SSID and password.
+
+Restart, and the system will reboot as a station connected to the configured SSID. 
+
+Access the web page `http://esp32.local` for measurements and configuration as before.
 
 
 # Build Environment
 * Ubuntu 20.04 LTS amdx64
 * Visual Studio Code with PlatformIO plugin using Arduino framework targeting `esp32dev` board. The file `platformio.ini` specifies the framework packages and libraries used by the project.
-* Custom `partition.csv` file with two 1.9MB code partitions supporting OTA firmware update
-* ~160kByte LittleFS partition for hosting HTML web server pages
+* Custom `partition.csv` file with two 1.4MB code partitions supporting OTA firmware update
+* ~425kByte LittleFS partition for hosting HTML web server pages
 
 # Hardware 
 

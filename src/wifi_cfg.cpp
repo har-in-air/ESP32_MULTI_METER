@@ -16,8 +16,8 @@ static const char* TAG = "wifi_cfg";
 
 extern const char* FwRevision;
 
+// stand-alone WiFi Access Point SSID (no password)
 const char* szAPSSID = "ESP32_INA226";
-const char* szAPPassword = "123456789";
 
 AsyncWebServer* pServer = NULL;
 AsyncWebSocket ws("/ws");
@@ -121,8 +121,8 @@ static void get_handler(AsyncWebServerRequest *request) {
 
 
 static void wifi_start_as_ap() {
-	Serial.printf("Starting Access Point %s with password %s\n", szAPSSID, szAPPassword);
-	WiFi.softAP(szAPSSID, szAPPassword);
+	Serial.printf("Starting Access Point %s with no password\n", szAPSSID);
+	WiFi.softAP(szAPSSID);
 	IPAddress IP = WiFi.softAPIP();
 	Serial.print("AP IP address : ");
 	Serial.println(IP);

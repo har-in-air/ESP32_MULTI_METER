@@ -19,7 +19,7 @@ void setup() {
 	pinMode(pinFET05, OUTPUT); // external pulldown
 
 	Wire.begin(pinSDA,pinSCL); 
-	Wire.setClock(2000000);
+	Wire.setClock(800000);
 
 	Serial.begin(115200);
 	Serial.println();
@@ -48,7 +48,7 @@ void setup() {
 		ina226_capture_oneshot(Measure);
 		}
 
-#if 0
+#if 1
 	Serial.println("Measuring triggered sample-rates");
 	for (int inx = 0; inx < NUM_CFG; inx++) {
 		Measure.cfg = Config[inx].reg | 0x0003;
@@ -75,7 +75,7 @@ void loop() {
 		ina226_capture_triggered(Measure, Buffer);
 		if (bConnected) { 
      		Serial.println("Transmitting samples");
-			ws.binary(clientID, (uint8_t*)Buffer, 2+Measure.nSamples*4); // needs size in bytes
+			ws.binary(clientID, (uint8_t*)Buffer, 4 + Measure.nSamples*4); // needs size in bytes
 			}
 		}
 	}
