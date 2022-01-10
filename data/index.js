@@ -146,7 +146,6 @@ function update_chart() {
 var gateway = `ws://${window.location.hostname}/ws`;
 var websocket;
 
-var Scale = 0;
 window.addEventListener('load', on_window_load);
 
 function on_window_load(event) {
