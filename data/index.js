@@ -1,16 +1,14 @@
 // Chart Initialization
 
-var c = document.getElementById("myChart");
+let c = document.getElementById("myChart");
 
-var Ctxt = document.getElementById("myChart").getContext("2d");
-Ctxt.canvas.width = 800;
-Ctxt.canvas.height = 400;
+let Ctxt = document.getElementById("myChart").getContext("2d");
 
-var periodMs = 1;
-var Time = [];
-var Data_mA = [];
-var Data_V = [];
-for(var inx = 0; inx < 10; inx++){
+let periodMs = 1;
+let Time = [];
+let Data_mA = [];
+let Data_V = [];
+for(let inx = 0; inx < 10; inx++){
 	Time.push(inx);
 	Data_mA.push(0);
 	Data_V.push(0);
@@ -43,6 +41,7 @@ function new_chart() {
 			duration: 0
 			},		
 		responsive : true,
+		maintainAspectRatio: false,		
 		borderWidth : 1,
 		pointRadius : 0,
 		scales: {
@@ -68,10 +67,10 @@ function new_chart() {
 // Chart Handling
 
 function init_sliders() {
-	var sliderSections = document.getElementsByClassName("range-slider");
-	for (var i = 0; i < sliderSections.length; i++) {
-		var sliders = sliderSections[i].getElementsByTagName("input");
-		for (var j = 0; j < sliders.length; j++) {
+	let sliderSections = document.getElementsByClassName("range-slider");
+	for (let i = 0; i < sliderSections.length; i++) {
+		let sliders = sliderSections[i].getElementsByTagName("input");
+		for (let j = 0; j < sliders.length; j++) {
 			if (sliders[j].type === "range") {
 				sliders[j].oninput = update_chart;
 				sliders[j].value = (j == 0 ? 0 : Time.length);
@@ -86,19 +85,19 @@ function init_sliders() {
 
 function update_chart() {
 	// Get slider values
-	var slides = document.getElementsByTagName("input");
-	var min = parseFloat(slides[0].value);
-	var max = parseFloat(slides[1].value);
+	let slides = document.getElementsByTagName("input");
+	let min = parseFloat(slides[0].value);
+	let max = parseFloat(slides[1].value);
 	// Neither slider will clip the other, so make sure we determine which is larger
 	if (min > max) {
-		var tmp = max;
+		let tmp = max;
 		max = min;
 		min = tmp;
 		}
 
-	var time_slice = [];
-	var data_mA_slice = [];
-	var data_V_slice = [];
+	let time_slice = [];
+	let data_mA_slice = [];
+	let data_V_slice = [];
 
 	time_slice = JSON.parse(JSON.stringify(Time)).slice(min, max);
 	data_mA_slice = JSON.parse(JSON.stringify(Data_mA)).slice(min, max);
@@ -109,15 +108,15 @@ function update_chart() {
 	ChartInst.data.datasets[1].data = data_V_slice;
 	ChartInst.update(0); // no animation
 
-	var iAvg = 0.0;
-	var vAvg = 0.0;
-	var iMax = -9999999.0;
-	var iMin = 9999999.0;
-	var vMax = -9999999.0;
-	var vMin = 9999999.0;
-	for(var t = 0; t < time_slice.length ; t++){
-		var i = parseFloat(data_mA_slice[t]);
-		var v = parseFloat(data_V_slice[t]);
+	let iAvg = 0.0;
+	let vAvg = 0.0;
+	let iMax = -9999999.0;
+	let iMin = 9999999.0;
+	let vMax = -9999999.0;
+	let vMin = 9999999.0;
+	for(let t = 0; t < time_slice.length ; t++){
+		let i = parseFloat(data_mA_slice[t]);
+		let v = parseFloat(data_V_slice[t]);
 		iAvg = iAvg + i;
 		vAvg = vAvg + v;
 		if (i > iMax) iMax = i;
@@ -128,7 +127,7 @@ function update_chart() {
 	iAvg = iAvg/time_slice.length;
 	vAvg = vAvg/time_slice.length;
 	
-	var displayElement = document.getElementsByClassName("rangeValues")[0];
+	let displayElement = document.getElementsByClassName("rangeValues")[0];
 	displayElement.innerHTML = "[" + min*periodMs + "," + max*periodMs + "]mS";
 	document.getElementById("istats").innerHTML = 
 		"avg : " + iAvg.toFixed(3) + "mA<br>" + 
@@ -143,7 +142,7 @@ function update_chart() {
 
 // WebSocket Initialization
 
-var gateway = `ws://${window.location.hostname}/ws`;
+let gateway = `ws://${window.location.hostname}/ws`;
 var websocket;
 
 window.addEventListener('load', on_window_load);
@@ -183,13 +182,13 @@ function on_ws_message(event) {
 	Data_mA = [];
 	Data_V = [];
 	periodMs = view[0];
-	var iScale = view[1] == 0 ? 0.05 : 0.002381;
-    var vScale = 0.00125;
+	let iScale = view[1] == 0 ? 0.05 : 0.002381;
+    let vScale = 0.00125;
 
 	for(var t = 0; t < len; t++){
 		Time.push(t*periodMs);
-		var ima = view[2*t+2] * iScale;
-		var v = view[2*t+3] * vScale;
+		let ima = view[2*t+2] * iScale;
+		let v = view[2*t+3] * vScale;
 		Data_mA.push(ima);
 		Data_V.push(v);
 		}  
@@ -206,11 +205,11 @@ function init_capture_button() {
 	}
 
 function on_capture_click(event) {
-	var cfgIndex = document.getElementById("cfgInx").value;
-	var sampleSeconds = document.getElementById("sampleSecs").value;
-	var scale = document.getElementById("scale").value;
+	let cfgIndex = document.getElementById("cfgInx").value;
+	let sampleSeconds = document.getElementById("sampleSecs").value;
+	let scale = document.getElementById("scale").value;
 	//var nsamples = (1+ Math.random()*499).toFixed(0);
-	var jsonObj = {};
+	let jsonObj = {};
 	jsonObj["action"] = "capture";
 	jsonObj["cfgIndex"] = cfgIndex;
 	jsonObj["sampleSecs"] = sampleSeconds.toString();

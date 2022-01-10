@@ -101,7 +101,7 @@ p {
 	}
 
 .istats { color: rgb(209, 20, 61);grid-area: 1 / 1 / span 1 / span 1;}
-.chrt { /*width : 1400px; height : 500px; margin-bottom: 50px; */grid-area: 1 / 2 / span 1 / span 1;}
+.chrt { width: 1500px; height: 750px; margin-bottom: 50px; */grid-area: 1 / 2 / span 1 / span 1;}
 .vstats { color: rgb(34, 73, 228);grid-area: 1 / 3 / span 1 / span 1;}
 
 .capture {
@@ -130,7 +130,7 @@ p {
 
 section.range-slider {
 position: relative; 
-width: 800px;
+width: 1400px;
 height: 100px;
 margin: auto;
 text-align: center;
@@ -149,7 +149,7 @@ box-shadow: inset 0 1px 0 0 #cdc6c6, inset 0 -1px 0 0 #d9d4d4;
 overflow: hidden;
 left: 0;
 top: 50px;
-width: 800px;
+width: 1400px;
 outline: none;
 height: 20px;
 padding: 0px;
