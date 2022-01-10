@@ -217,6 +217,7 @@ function on_message(event) {
 	new_chart();
 	init_sliders();
 	update_chart();
+	document.getElementById("led").innerHTML = "<div class=\"led-green\"></div>";
 	}
 
 // Button handling
@@ -236,4 +237,5 @@ function on_capture(event) {
 	jsonObj["sampleSecs"] = sampleSeconds.toString();
 	jsonObj["scale"] = scale;
     websocket.send(JSON.stringify(jsonObj));
+	document.getElementById("led").innerHTML = "<div class=\"led-red\"></div>";
 	}

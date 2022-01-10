@@ -40,15 +40,14 @@ void setup() {
 	//nv_options_reset(Options);
 	//nv_config_reset(ConfigTbl);
    	
-	Measure.scale = SCALE_LO;
-
 	Serial.println("Measuring one-shot sample times");
+	Measure.scale = SCALE_LO;
 	for (int inx = 0; inx < NUM_CFG; inx++) {
 		Measure.cfg = Config[inx].reg | 0x0003;
 		ina226_capture_oneshot(Measure);
 		}
 
-#if 1
+#if 0
 	Serial.println("Measuring triggered sample-rates");
 	for (int inx = 0; inx < NUM_CFG; inx++) {
 		Measure.cfg = Config[inx].reg | 0x0003;
