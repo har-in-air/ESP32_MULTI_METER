@@ -5,11 +5,18 @@
 </head>
 
 <body>
+<div style="margin:auto;width:600px;">	
+<h1>ESP32 INA226 Current & Voltage Meter</h1>
+</div>
+		
 <div class="grid-container">
-	<div class="hdr">ESP32 INA226 Current & Voltage Meter</div>
-	<div class="istats" id="istats">iStats</div>
+	<div class="istats">
+		<fieldset><legend>Current</legend>
+		<p id="istats">iStats</p>
+		</fieldset>
+	</div>
 	<div class="chrt">
-	  <canvas id="myChart"> </canvas>
+	  <canvas id="myChart" style="width:1500px;height:600px;"> </canvas>
 	  <p>
       <section class="range-slider">
         <span class="rangeValues" style="text-align:center"></span>
@@ -17,30 +24,43 @@
         <input id="slider1" value="1" min="0" max="" type="range" />
       </section>
 	</div>  
-	<div class="vstats" id="vstats">vStats</div>
-	<div class="capture">
-		<table>
-		<tr><td><label for="cfgInx">Sample Rate</label></td>
-			<td><select id="cfgInx" name="cfgInx" class="cfg-select">
-				<option value="0" "selected">1000Hz : avg=1, vadc=140us, sadc=332uS</option>
-				<option value="1" >500Hz : avg=1, vadc=140uS, sadc=1100uS</option>
-				<option value="2" >200Hz : avg=4, vadc=332uS, sadc=332uS</option>
-				</select>
-		</td></tr>
-		<tr><td><label for="scale">Current Range</label></td>
-			<td><select id="scale" name="scale">
-				<option value="0" "selected">FS=1638mA, res=50uA</option>
-				<option value="1" >FS=78mA, res=2.4uA</option>
-				</select>
-		</td></tr>
-		<tr><td>Sample Seconds</td><td><input type="number" id="sampleSecs" name=sampleSecs value="1" min="%SAMPLE_SECS_MIN%" max="%SAMPLE_SECS_MAX%"></td></tr>
-		</table>		
-		<div><button id="capture">Capture</button></div>
-		<div id="led" class="led-box">
-			<div class="led-green"></div>
-		</div>
+	<div class="vstats">
+		<fieldset><legend>Voltage</legend>
+		<p id="vstats">vStats</p>
+		</fieldset>
+	</div>
+</div>	
+<p>
+<div class="capture">
+	<table>
+	<tr>
+	<td><label for="cfgInx">Sample Rate</label></td>
+	<td><select id="cfgInx" name="cfgInx" class="cfg-select">
+			<option value="0" "selected">1000Hz : avg=1, vadc=140us, sadc=332uS</option>
+			<option value="1" >500Hz : avg=1, vadc=140uS, sadc=1100uS</option>
+			<option value="2" >200Hz : avg=4, vadc=332uS, sadc=332uS</option>
+	</select></td>
+	</tr>
+	<tr>
+	<td><label for="scale">Current Range</label></td>
+	<td><select id="scale" name="scale" class="scale-select">
+			<option value="0" "selected">FS=1638mA, res=50uA</option>
+			<option value="1" >FS=78mA, res=2.4uA</option>
+	</select></td>
+	</tr>
+	<tr>
+	<td>Sample Seconds</td><td><input type="number" id="sampleSecs" name=sampleSecs value="1" min="%SAMPLE_SECS_MIN%" max="%SAMPLE_SECS_MAX%">
+	</td>
+	</tr>
+	</table>		
+	<p>
+	<button id="capture">Capture</button>
+	<p>
+	<div id="led" class="led-box">
+		<div class="led-green"></div>
 	</div>
 </div>
+
 </body>
 </html>
 

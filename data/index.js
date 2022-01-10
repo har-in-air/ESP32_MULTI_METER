@@ -151,13 +151,13 @@ function update_chart() {
 	var displayElement = document.getElementsByClassName("rangeValues")[0];
 	displayElement.innerHTML = "[" + min*periodMs + "," + max*periodMs + "]mS";
 	document.getElementById("istats").innerHTML = 
-		"iAvg : " + iAvg.toFixed(3) + "mA<p>" + 
-		"iMin : " + iMin.toFixed(3) + "mA<p>" + 
-		"iMax : " + iMax.toFixed(3) + "mA";
+		"avg : " + iAvg.toFixed(3) + "mA<br>" + 
+		"min : " + iMin.toFixed(3) + "mA<br>" + 
+		"max : " + iMax.toFixed(3) + "mA";
 	document.getElementById("vstats").innerHTML = 
-		"vAvg : " + vAvg.toFixed(2) + "V<p>" +
-		"vMin : " + vMin.toFixed(2) + "V<p>" +
-		"vMax : " + vMax.toFixed(2) + "V";
+		"avg : " + vAvg.toFixed(3) + "V<br>" +
+		"min : " + vMin.toFixed(3) + "V<br>" +
+		"max : " + vMax.toFixed(3) + "V";
 	}	
 
 
