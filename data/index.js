@@ -1,8 +1,6 @@
 // Chart Initialization
 
 var c = document.getElementById("myChart");
-//c.width = 800;
-//c.height = 400;
 
 var Ctxt = document.getElementById("myChart").getContext("2d");
 Ctxt.canvas.width = 800;
@@ -69,7 +67,6 @@ function new_chart() {
 
 // Chart Handling
 
-
 function init_sliders() {
 	var sliderSections = document.getElementsByClassName("range-slider");
 	for (var i = 0; i < sliderSections.length; i++) {
@@ -86,23 +83,6 @@ function init_sliders() {
 			}
 		}
 	}
-/*
-function init_sliders() {
-	var slider0 = document.getElementByID("slider0");
-	var slider1 = document.getElementByID("slider1");
-	slider0.min = 0;
-	slider1.min = 0;
-	slider0.max = Time.length;
-	slider1.max = Time.length;
-	slider0.value = 0;
-	slider1.value = Time.length;
-	slider0.oninput = update_chart;
-	slider1.oninput = update_chart;
-	slider0.oninput();
-	slider1.oninput();
-	}
-*/
-
 
 function update_chart() {
 	// Get slider values
@@ -167,13 +147,13 @@ var gateway = `ws://${window.location.hostname}/ws`;
 var websocket;
 
 var Scale = 0;
-window.addEventListener('load', on_load);
+window.addEventListener('load', on_window_load);
 
-function on_load(event) {
+function on_window_load(event) {
 	new_chart();
 	init_sliders();
     init_web_socket();
-	init_button();
+	init_capture_button();
 	}
 
 // WebSocket handling
@@ -182,21 +162,21 @@ function init_web_socket() {
     console.log('Trying to open a WebSocket connection...');
     websocket = new WebSocket(gateway);
 	websocket.binaryType = "arraybuffer";
-    websocket.onopen    = on_open;
-    websocket.onclose   = on_close;
-    websocket.onmessage = on_message;
+    websocket.onopen    = on_ws_open;
+    websocket.onclose   = on_ws_close;
+    websocket.onmessage = on_ws_message;
 	}
 
-function on_open(event) {
+function on_ws_open(event) {
     console.log('Connection opened');
 	}
 
-function on_close(event) {
+function on_ws_close(event) {
     console.log('Connection closed');
     setTimeout(init_web_socket, 2000);
 	}
 
-function on_message(event) {
+function on_ws_message(event) {
 	let view = new Int16Array(event.data);
 	let len = (view.length - 2) / 2;
 	ChartInst.destroy();
@@ -222,11 +202,11 @@ function on_message(event) {
 
 // Button handling
 
-function init_button() {
-    document.getElementById('capture').addEventListener('click', on_capture);
+function init_capture_button() {
+    document.getElementById('capture').addEventListener('click', on_capture_click);
 	}
 
-function on_capture(event) {
+function on_capture_click(event) {
 	var cfgIndex = document.getElementById("cfgInx").value;
 	var sampleSeconds = document.getElementById("sampleSecs").value;
 	var scale = document.getElementById("scale").value;
