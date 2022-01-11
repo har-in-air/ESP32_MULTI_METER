@@ -52,14 +52,6 @@ static String string_processor(const String& var){
 		return FwRevision;
 		}
 	else
-	if(var == "SAMPLE_SECS_MIN"){
-		return String(SAMPLE_SECS_MIN);
-		}
-	else
-	if(var == "SAMPLE_SECS_MAX"){
-		return String(SAMPLE_SECS_MAX);
-		}
-	else
 	if(var == "SSID"){
 		return Options.ssid;
 		}

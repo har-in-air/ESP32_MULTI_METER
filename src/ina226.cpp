@@ -17,7 +17,7 @@ CONFIG_t Config[NUM_CFG] = {
 	};
 
 MEASURE_t Measure;
-int16_t Buffer[1+MAX_SAMPLES*2];
+int16_t* Buffer = NULL; 
 
 static void switch_scale(int scale);
 
@@ -165,6 +165,9 @@ void ina226_capture_triggered(MEASURE_t &measure, int16_t buffer[]) {
 	Serial.printf("Triggered : 0x%04X %s %.1fHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", measure.sampleRate, measure.vavg, measure.iavgma);
 	}
 
+
+void ina226_capture_gated(MEASURE_t &measure, int16_t buffer[]) {
+	}
 
 void ina226_capture_continuous(MEASURE_t &measure, int16_t buffer[]) {
 	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 

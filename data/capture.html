@@ -39,26 +39,30 @@
 			<option value="0" "selected">1000Hz : avg=1, vadc=140us, sadc=332uS</option>
 			<option value="1" >500Hz : avg=1, vadc=140uS, sadc=1100uS</option>
 			<option value="2" >200Hz : avg=4, vadc=332uS, sadc=332uS</option>
-	</select></td>
+	</select></td><td></td><td></td>
 	</tr>
 	<tr>
 	<td><label for="scale">Current Range</label></td>
 	<td><select id="scale" name="scale" class="scale-select">
 			<option value="0" "selected">FS=1638mA, res=50uA</option>
-			<option value="1" >FS=78mA, res=2.4uA</option>
-	</select></td>
+			<option value="1">FS=78mA, res=2.4uA</option>
+	</select></td><td><button style="margin-left:100px;margin-right:40px;" id="capture">Capture</button></td><td><div id="led" class="led-box">
+			<div class="led-green"></div>
+			</div></td>
 	</tr>
 	<tr>
-	<td>Sample Seconds</td><td><input type="number" id="sampleSecs" name=sampleSecs value="1" min="%SAMPLE_SECS_MIN%" max="%SAMPLE_SECS_MAX%">
-	</td>
+	<td><label for="sampleSecs">Sample Seconds</label></td>
+	<td><select id="sampleSecs" name="sampleSecs" class="sample-select">
+		<option value="1" "selected">1</option>
+		<option value="2">2</option>
+		<option value="4">4</option>
+		<option value="8">8</option>
+		<option value="16">16</option>
+		<option value="999">Gated</option>
+		</select>
+	</td><td></td><td></td>
 	</tr>
 	</table>		
-	<p>
-	<button id="capture">Capture</button>
-	<p>
-	<div id="led" class="led-box">
-		<div class="led-green"></div>
-	</div>
 </div>
 
 </body>

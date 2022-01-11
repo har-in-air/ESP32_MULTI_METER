@@ -10,10 +10,7 @@
 #define REG_ALERT	0x07
 #define REG_ID		0xFE
 
-#define MAX_SAMPLES		10000
-
-#define SAMPLE_SECS_MIN       1
-#define SAMPLE_SECS_MAX       30
+#define MAX_SAMPLES		16000
 
 #define SCALE_HI	0 // Shunt R = 0.05 ohms, Full scale = 1.64A
 #define SCALE_LO	1 // Shunt R = 1.05 ohms, Full scale = 78mA
@@ -42,7 +39,7 @@ typedef struct {
 
 #define NUM_CFG 3
 
-extern int16_t Buffer[];
+extern int16_t* Buffer;
 extern CONFIG_t Config[];
 extern MEASURE_t Measure;
 
@@ -52,7 +49,7 @@ void	ina226_reset();
 void	ina226_config(int cfgIndex, bool bOneShot);
 void	ina226_capture_continuous(MEASURE_t &measure, int16_t buffer[]);
 void 	ina226_capture_triggered(MEASURE_t &measure, int16_t buffer[]);
+void 	ina226_capture_gated(MEASURE_t &measure, int16_t buffer[]);
 void	ina226_capture_oneshot(MEASURE_t &measure);
-void	ina226_calibrate_sample_rates();
 
 #endif

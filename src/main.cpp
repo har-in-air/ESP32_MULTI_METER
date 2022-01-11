@@ -19,7 +19,7 @@ void setup() {
 	pinMode(pinFET05, OUTPUT); // external pulldown
 
 	Wire.begin(pinSDA,pinSCL); 
-	Wire.setClock(800000);
+	Wire.setClock(2000000);
 
 	Serial.begin(115200);
 	Serial.println();
@@ -36,7 +36,7 @@ void setup() {
 		}
 
 	ina226_reset();
-
+	Buffer = (int16_t*)malloc((2+MAX_SAMPLES*2)*2);
 	//nv_options_reset(Options);
 	//nv_config_reset(ConfigTbl);
    	
@@ -70,8 +70,14 @@ void loop() {
 	ws.cleanupClients();
 	if (bCapture) {
 		bCapture = false;
-		Serial.printf("Capturing %d samples using cfg[%04X] and scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
-		ina226_capture_triggered(Measure, Buffer);
+		if (Measure.nSamples == 999) {
+			Serial.printf("Capturing gated samples using cfg[%04X] and scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
+			ina226_capture_gated(Measure, Buffer);
+			}
+		else {
+			Serial.printf("Capturing %d samples using cfg[%04X] and scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
+			ina226_capture_triggered(Measure, Buffer);
+			}
 		if (bConnected) { 
      		Serial.println("Transmitting samples");
 			ws.binary(clientID, (uint8_t*)Buffer, 4 + Measure.nSamples*4); // needs size in bytes
