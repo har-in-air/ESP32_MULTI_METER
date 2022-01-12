@@ -8,7 +8,7 @@ let periodMs = 1;
 let Time = [];
 let Data_mA = [];
 let Data_V = [];
-for(let inx = 0; inx < 10; inx++){
+for(let inx = 0; inx < 1000; inx++){
 	Time.push(inx);
 	Data_mA.push(0);
 	Data_V.push(0);
