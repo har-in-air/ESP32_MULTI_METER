@@ -146,7 +146,7 @@ void wifi_init() {
 		wifi_start_as_station();
 		}
 	
-	if (!MDNS.begin("esp32")) { // Use http://esp32.local for web server page
+	if (!MDNS.begin("meter")) { // Use http://meter.local for web server page
 		Serial.println("Error starting mDNS service");
 	    }
     pServer = new AsyncWebServer(80);
