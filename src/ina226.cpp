@@ -226,7 +226,7 @@ void ina226_capture_gated(MEASURE_t &measure, int16_t buffer[]) {
 	measure.vmax = bmax*0.00125f; 
 	measure.vmin = bmin*0.00125f; 
 	// vload = vbus - vshunt
-	Serial.printf("Gated : %.1fsecs 0x%04X %s %.1fHz %.1fV %.3fmA\n", 1000000.0f/(float)us, measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", measure.sampleRate, measure.vavg, measure.iavgma);
+	Serial.printf("Gated : %.1fsecs 0x%04X %s %.1fHz %.1fV %.3fmA\n", (float)us/1000000.0f, measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", measure.sampleRate, measure.vavg, measure.iavgma);
 	}
 
 
