@@ -167,7 +167,68 @@ void ina226_capture_triggered(MEASURE_t &measure, int16_t buffer[]) {
 
 
 void ina226_capture_gated(MEASURE_t &measure, int16_t buffer[]) {
+	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 
+	int32_t savg, bavg; // averaging accumulators
+	uint16_t reg_mask, reg_bus, reg_shunt;
+	smax = bmax = -32768;
+	smin = bmin = 32767;
+	savg = bavg = 0;
+	switch_scale(measure.scale);
+	// conversion ready -> alert pin goes low
+	ina226_write_reg(REG_MASK, 0x0400);
+	buffer[0] = ((uint16_t)measure.periodUs)/1000;
+	buffer[1] = measure.scale;
+	int numSamples = 0;
+	// wait for gate signal to go low
+	while (digitalRead(pinGate) == HIGH); 
+	uint32_t tstart = micros();
+	while((digitalRead(pinGate) == LOW) && (numSamples < MAX_SAMPLES)) {
+		uint32_t t1 = micros();
+		ina226_write_reg(REG_CFG, measure.cfg);
+		// pinAlert pulled up to 3v3, active low on conversion complete
+		while (digitalRead(pinAlert) == HIGH);
+		// read shunt and bus ADCs
+		ina226_read_reg(REG_SHUNT, &reg_shunt); 
+		ina226_read_reg(REG_VBUS, &reg_bus); 
+		
+		data_i16 = (int16_t)reg_shunt;
+		buffer[2*numSamples+2] = data_i16;
+		savg += i32(data_i16);
+		if (data_i16 > smax) smax = data_i16;
+		if (data_i16 < smin) smin = data_i16;
+
+		data_i16 = (int16_t)reg_bus;
+		buffer[2*numSamples+3] = data_i16; 
+		bavg += i32(data_i16);
+		if (data_i16 > bmax) bmax = data_i16;
+		if (data_i16 < bmin) bmin = data_i16;
+		while ((micros() - t1) < measure.periodUs);
+		numSamples++;
+		}
+	uint32_t us = micros() - tstart;
+	measure.nSamples = numSamples;
+	measure.sampleRate = (1000000.0f*(float)numSamples)/(float)us;
+	// convert shunt adc reading to mA
+	savg = savg / numSamples;
+	if (measure.scale == SCALE_HI) {
+		measure.iavgma = savg*0.05f;
+		measure.imaxma = smax*0.05f;
+		measure.iminma = smin*0.05f;
+		}
+	else {
+		measure.iavgma = savg*0.002381f;
+		measure.imaxma = smax*0.002381f;
+		measure.iminma = smin*0.002381f;
+		}	
+	// convert bus adc reading to V
+	bavg = bavg / numSamples;
+	measure.vavg = bavg*0.00125f; 
+	measure.vmax = bmax*0.00125f; 
+	measure.vmin = bmin*0.00125f; 
+	// vload = vbus - vshunt
+	Serial.printf("Gated : %.1fsecs 0x%04X %s %.1fHz %.1fV %.3fmA\n", 1000000.0f/(float)us, measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", measure.sampleRate, measure.vavg, measure.iavgma);
 	}
+
 
 void ina226_capture_continuous(MEASURE_t &measure, int16_t buffer[]) {
 	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 

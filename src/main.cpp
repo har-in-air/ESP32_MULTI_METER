@@ -10,6 +10,7 @@
 
 const char* FwRevision = "0.90";
 
+
 void setup() {
 	pinMode(pinAlert, INPUT); // external pullup, active low
 	pinMode(pinGate, INPUT); // external pullup, active low
@@ -36,7 +37,10 @@ void setup() {
 		}
 
 	ina226_reset();
-	Buffer = (int16_t*)malloc((2+MAX_SAMPLES*2)*2);
+	// Sample buffer contains 16-bit Vbus and Shunt ADC signed samples
+	// First two entries contain the current scale and sample period
+	Buffer = (int16_t*)malloc((2+MAX_SAMPLES*2)*sizeof(int16_t));
+
 	//nv_options_reset(Options);
 	//nv_config_reset(ConfigTbl);
    	
@@ -70,17 +74,17 @@ void loop() {
 	ws.cleanupClients();
 	if (bCapture) {
 		bCapture = false;
-		if (Measure.nSamples == 999) {
-			Serial.printf("Capturing gated samples using cfg[%04X] and scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
+		if (Measure.nSamples == 0) {
+			Serial.printf("Capturing gated samples using cfg = 0x%04X, scale %d\n", Measure.cfg, Measure.scale );
 			ina226_capture_gated(Measure, Buffer);
 			}
 		else {
-			Serial.printf("Capturing %d samples using cfg[%04X] and scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
+			Serial.printf("Capturing %d samples using cfg = 0x%04X, scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
 			ina226_capture_triggered(Measure, Buffer);
 			}
 		if (bConnected) { 
      		Serial.println("Transmitting samples");
-			ws.binary(clientID, (uint8_t*)Buffer, 4 + Measure.nSamples*4); // needs size in bytes
+			ws.binary(clientID, (uint8_t*)Buffer, 4 + Measure.nSamples*4); // size in bytes
 			}
 		}
 	}

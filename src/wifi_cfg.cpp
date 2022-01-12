@@ -224,7 +224,7 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
         int cfgIndex = strtol(szCfgIndex, NULL, 10);
         int sampleSeconds = strtol(szSampleSeconds, NULL, 10);
 		int sampleRate = 1000000/Config[cfgIndex].periodUs;
-		int numSamples = sampleSeconds*sampleRate;
+		int numSamples = sampleSeconds != 999 ? sampleSeconds*sampleRate : 0;
 		int scale = strtol(szScale, NULL, 10);
 		
 		Measure.cfg = Config[cfgIndex].reg | 0x0003;
