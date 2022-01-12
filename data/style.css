@@ -181,10 +181,9 @@ background-image: -webkit-gradient(
 
 
 button {
-	margin-bottom:1rem;
 	border-radius:0.5em;
 	background: #0066A2;
-	padding:0.3em 0.3em;
+	padding:0.3em 1.0em;
 	color:white;
 	font-size:1.0em;
 	}
@@ -195,15 +194,15 @@ button:active {
 
 
 .led-box {
-  height: 30px;
-  width: 25%;
+  height: 24px;
+  width: 24px;
   margin: auto;
   justify-content: center;
 }
 
 
 .led-red {
-  margin: 0 auto;
+  margin: 0 0;
   width: 24px;
   height: 24px;
   background-color: #F00;
@@ -213,7 +212,7 @@ button:active {
 
 
 .led-yellow {
-  margin: 0 auto;
+  margin: 0 0;
   width: 24px;
   height: 24px;
   background-color: #FF0;
@@ -222,7 +221,7 @@ button:active {
 }
 
 .led-green {
-  margin: 0 auto;
+  margin: 0 0;
   width: 24px;
   height: 24px;
   background-color: #ABFF00;
