@@ -58,6 +58,8 @@ If you do not have mDNS support, you will have to check the serial monitor log t
 * SS56 schottky diode, acts as protection for the 1ohm shunt resistor when the low current scale is selected.
 
 # Usage
+
+<img src="docs/gated_capture_record.gif">
 	
 Sampling at 200Hz will result in less noise, but may not capture pulse current events and peak values (maxima/minima).
 
