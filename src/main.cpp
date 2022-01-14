@@ -2,11 +2,9 @@
 #include <Wire.h>  
 #include <FS.h>
 #include <LittleFS.h>
-#include <esp_task_wdt.h>
 #include "config.h"
 #include "nv_data.h"
 #include "wifi_cfg.h"
-#include "tone.h"
 #include "ina226.h"
 
 const char* FwRevision = "0.90";
@@ -23,10 +21,8 @@ int MaxSamples;
 static void wifi_task(void* pvParameter);
 static void capture_task(void* pvParameter);
 
-// workaround for not having access to 'make menuconfig' to configure the stack size for the
-// setup and loop task is to create a new main task with desired stack size, and then delete setup 
-// task. 
-// Core 0 : low level esp-idf wifi code, web server and socket communication
+// create the desired tasks, and then delete arduino created loopTask that calls setup() and loop(). 
+// Core 0 : wifi task with web server and websocket communication, and low level esp-idf wifi code
 // Core 1 : capture task
 
 void setup() {
@@ -46,7 +42,7 @@ void setup() {
 
 	// web server and web socket connection handler on core 0 along with low level wifi actions (ESP-IDF code)
     xTaskCreatePinnedToCore(&wifi_task, "wifi_task", 4096, NULL, 1, NULL, CORE_0);
-    // capture task on core 1 
+    // capture task on core 1, don't want i2c capture to be pre-empted as far as possible to maintain sampling rate. 
 	xTaskCreatePinnedToCore(&capture_task, "capture_task", 4096, NULL, configMAX_PRIORITIES-1, NULL, CORE_1);
 
 	// destroy loopTask which called setup() from arduino:app_main()
@@ -54,8 +50,8 @@ void setup() {
     }
 
 
+// never called as loopTask is deleted, but needs to be defined
 void loop(){
-    esp_task_wdt_reset();
 	}
 
 
