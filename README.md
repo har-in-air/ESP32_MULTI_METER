@@ -35,6 +35,7 @@ On the home page you can configure an external WiFi AP SSID and password. Submit
 
 If you do not have mDNS support, you will have to check the serial monitor log to get the dynamically assigned IP address for the meter. Or access the meter as a stand-alone AP and web server with fixed webpage at `http://192.168.4.1`.
 
+<img src="docs/gated_capture_record.gif">
 
 # Build Environment
 * Ubuntu 20.04 LTS amdx64
@@ -59,7 +60,6 @@ If you do not have mDNS support, you will have to check the serial monitor log t
 
 # Usage
 
-<img src="docs/gated_capture_record.gif">
 	
 Sampling at 200Hz will result in less noise, but may not capture pulse current events and peak values (maxima/minima).
 
