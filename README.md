@@ -6,10 +6,10 @@ and load current. A web server provides capture and display features via a web p
 The bus voltage can be up to 40V. 
 
 There are two ranges for current measurement : 
-* full-scale 1638mA with a resolution of 50uA
-* full-scale 78mA with a resolution of 2.4uA
+* HIGH : full-scale 1638mA, with a resolution of 50uA
+* LOW : full-scale 78mA, with a resolution of 2.4uA
 
-There are 3 options for sampling rate :
+There are 3 sample rate options :
 * 1000Hz : 1mS sample period, no sample averaging, vbus ADC conversion time = 140uS, shunt ADC conversion time = 332uS
 * 500Hz : 2mS sample period, no sample averaging, vbus ADC conversion time 140uS, shunt ADC conversion time = 1100uS
 * 200Hz : 5mS sample period, averaging 4 samples, vbus ADC conversion time 140uS, shunt ADC conversion time = 332uS
@@ -19,15 +19,19 @@ A maximum of 16000 samples can be captured with a single capture trigger.
 * Sample Rate = 500Hz : Maximum 32 second capture
 * Sample Rate = 200Hz : Maximum 80 second capture
 
-Gated capture up to the maximum of 16000 samples is available. The device under test (DUT) must provide a gate signal via an opto-isolator for the desired capture duration.
+Gated capture up to the maximum of 16000 samples is available. The gate signal is provided via an opto-isolator. This can come from the Device Under Test (DUT) or some other external automated trigger.
 
-If an external WiFi Access Point has not been configured, the system boots up
-as a stand-alone Access Point and web server with SSID `ESP32_INA226`, no password required.
+If an external WiFi Access Point has not been configured or is unavailable, the system boots up
+as a stand-alone WiFi Access Point and web server with SSID `ESP32_INA226`, no password required.
 
-Connect to this AP, then access the page `http://192.168.4.1`. If your OS has mDNS support you can use the url `http://meter.local`.
-MacOS has built-in support. For Windows, install Bonjour. For Ubuntu, install Avahi.
+Connect to this WiFi AP, then open the page `http://192.168.4.1` in a browser. 
 
-Here you can configure an external WiFi AP SSID and password. Submit the WiFi credentials and restart the ESP32, now it will connect as a station to the configured AP SSID. You can then now access the url `http://meter.local` as before. 
+If your OS has mDNS support, use the url `http://meter.local`.
+MacOS has built-in support for mDNS. For Windows, install Bonjour. For Ubuntu, install Avahi.
+
+<img src="docs/home_page.png">
+
+On the home page you can configure an external WiFi AP SSID and password. Submit the WiFi credentials and restart the ESP32, now it will connect as a station to the configured AP SSID. You can then now access the url `http://meter.local` as before. 
 
 If you do not have mDNS support, you will have to check the serial monitor log to get the dynamically assigned IP address for the meter. Or access the meter as a stand-alone AP and web server with fixed webpage at `http://192.168.4.1`.
 
