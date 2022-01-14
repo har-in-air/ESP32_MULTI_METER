@@ -6,8 +6,9 @@
 
 #define i32(x) ((int32_t)(x))
 
+static const char* TAG = "ina226";
 
-CONFIG_t Config[NUM_CFG] = {
+const CONFIG_t Config[NUM_CFG] = {
 	{ 0x4000 | (0 << 8) | (1 << 6) | (2 << 3), // 1, 140uS, 332uS
 	  1000UL },
 	{ 0x4000 | (0 << 8) | (1 << 6) | (4 << 3), // 1, 140uS, 1100uS
@@ -16,8 +17,6 @@ CONFIG_t Config[NUM_CFG] = {
 	  5000UL }
 	};
 
-MEASURE_t Measure;
-int16_t* Buffer = NULL; 
 
 static void switch_scale(int scale);
 
@@ -70,7 +69,7 @@ int ina226_read_reg(uint8_t regAddr, uint16_t* pdata) {
 // Bus ADC resolution is 1.25mV/lsb 
 // Full scale = (32767 * 1.25) mV = 40.95875V
 
-void ina226_capture_oneshot(MEASURE_t &measure) {
+void ina226_capture_oneshot(volatile MEASURE_t &measure) {
 	switch_scale(measure.scale);
 	// conversion ready -> alert pin goes low
 	ina226_write_reg(REG_MASK, 0x0400);
@@ -103,11 +102,11 @@ void ina226_capture_oneshot(MEASURE_t &measure) {
 	measure.vmax = measure.vavg;
 	measure.vmin = measure.vavg;
 	measure.sampleRate = 1000000.0f/(float)us;
-	Serial.printf("OneShot : 0x%04X %s %dus %dHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", us, (int)(measure.sampleRate+0.5f), measure.vavg, measure.iavgma);
+	ESP_LOGI(TAG,"OneShot : 0x%04X %s %dus %dHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", us, (int)(measure.sampleRate+0.5f), measure.vavg, measure.iavgma);
 	}
 
 
-void ina226_capture_triggered(MEASURE_t &measure, int16_t buffer[]) {
+void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buffer) {
 	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 
 	int32_t savg, bavg; // averaging accumulators
 	uint16_t reg_mask, reg_bus, reg_shunt;
@@ -162,11 +161,11 @@ void ina226_capture_triggered(MEASURE_t &measure, int16_t buffer[]) {
 	measure.vmax = bmax*0.00125f; 
 	measure.vmin = bmin*0.00125f; 
 	// vload = vbus - vshunt
-	Serial.printf("Triggered : 0x%04X %s %.1fHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", measure.sampleRate, measure.vavg, measure.iavgma);
+	ESP_LOGI(TAG,"Triggered : 0x%04X %s %.1fHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", measure.sampleRate, measure.vavg, measure.iavgma);
 	}
 
 
-void ina226_capture_gated(MEASURE_t &measure, int16_t buffer[]) {
+void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer) {
 	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 
 	int32_t savg, bavg; // averaging accumulators
 	uint16_t reg_mask, reg_bus, reg_shunt;
@@ -181,8 +180,9 @@ void ina226_capture_gated(MEASURE_t &measure, int16_t buffer[]) {
 	int numSamples = 0;
 	// wait for gate signal to go low
 	while (digitalRead(pinGate) == HIGH); 
+	GateOpenFlag = true;
 	uint32_t tstart = micros();
-	while((digitalRead(pinGate) == LOW) && (numSamples < MAX_SAMPLES)) {
+	while((digitalRead(pinGate) == LOW) && (numSamples < MaxSamples)) {
 		uint32_t t1 = micros();
 		ina226_write_reg(REG_CFG, measure.cfg);
 		// pinAlert pulled up to 3v3, active low on conversion complete
@@ -226,11 +226,11 @@ void ina226_capture_gated(MEASURE_t &measure, int16_t buffer[]) {
 	measure.vmax = bmax*0.00125f; 
 	measure.vmin = bmin*0.00125f; 
 	// vload = vbus - vshunt
-	Serial.printf("Gated : %.3fsecs 0x%04X %s %.1fHz %.1fV %.3fmA\n", (float)us/1000000.0f, measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", measure.sampleRate, measure.vavg, measure.iavgma);
+	ESP_LOGI(TAG,"Gated : %.3fsecs 0x%04X %s %.1fHz %.1fV %.3fmA\n", (float)us/1000000.0f, measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", measure.sampleRate, measure.vavg, measure.iavgma);
 	}
 
 
-void ina226_capture_continuous(MEASURE_t &measure, int16_t buffer[]) {
+void ina226_capture_continuous(volatile MEASURE_t &measure, volatile int16_t* buffer) {
 	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 
 	int32_t savg, bavg; // averaging accumulators
 	uint16_t reg_mask, reg_bus, reg_shunt;
@@ -280,14 +280,33 @@ void ina226_capture_continuous(MEASURE_t &measure, int16_t buffer[]) {
 	measure.vmax = bmax*0.00125f; 
 	measure.vmin = bmin*0.00125f; 
 	// vload = vbus - vshunt
-	Serial.printf("Continuous : 0x%04X %s %dHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", (int)(measure.sampleRate+0.5f), measure.vavg, measure.iavgma);
+	ESP_LOGI(TAG,"Continuous : 0x%04X %s %dHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", (int)(measure.sampleRate+0.5f), measure.vavg, measure.iavgma);
 	}
 
 
 void ina226_reset() {
-	Serial.println("INA226 system reset");
+	ESP_LOGI(TAG,"INA226 system reset");
 	// system reset, bit self-clears
 	ina226_write_reg(REG_CFG, 0x8000);
 	delay(50);
 	}
 
+
+void ina226_test_capture() {
+	ESP_LOGI(TAG,"Measuring one-shot sample times");
+	Measure.scale = SCALE_LO;
+	for (int inx = 0; inx < NUM_CFG; inx++) {
+		Measure.cfg = Config[inx].reg | 0x0003;
+		ina226_capture_oneshot(Measure);
+		}
+
+#if 0
+	ESP_LOGI(TAG,"Measuring triggered sample-rates");
+	for (int inx = 0; inx < NUM_CFG; inx++) {
+		Measure.cfg = Config[inx].reg | 0x0003;
+		Measure.periodUs = Config[inx].periodUs;
+		Measure.nSamples = 2000;
+		ina226_capture_triggered(Measure, Buffer);
+		}
+#endif
+	}

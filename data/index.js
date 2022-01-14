@@ -176,26 +176,31 @@ function on_ws_close(event) {
 
 function on_ws_message(event) {
 	let view = new Int16Array(event.data);
-	let len = (view.length - 2) / 2;
-	ChartInst.destroy();
-	Time = [];
-	Data_mA = [];
-	Data_V = [];
-	periodMs = view[0];
-	let iScale = view[1] == 0 ? 0.05 : 0.002381;
-    let vScale = 0.00125;
+	if ((view.length == 1) && (view[0] == 1234)){
+		document.getElementById("led").innerHTML = "<div class=\"led-red\"></div>";
+		}
+	else {
+		let len = (view.length - 2) / 2;
+		ChartInst.destroy();
+		Time = [];
+		Data_mA = [];
+		Data_V = [];
+		periodMs = view[0];
+		let iScale = view[1] == 0 ? 0.05 : 0.002381;
+		let vScale = 0.00125;
 
-	for(var t = 0; t < len; t++){
-		Time.push(t*periodMs);
-		let ima = view[2*t+2] * iScale;
-		let v = view[2*t+3] * vScale;
-		Data_mA.push(ima);
-		Data_V.push(v);
-		}  
-	new_chart();
-	init_sliders();
-	update_chart();
-	document.getElementById("led").innerHTML = "<div class=\"led-green\"></div>";
+		for(var t = 0; t < len; t++){
+			Time.push(t*periodMs);
+			let ima = view[2*t+2] * iScale;
+			let v = view[2*t+3] * vScale;
+			Data_mA.push(ima);
+			Data_V.push(v);
+			}  
+		new_chart();
+		init_sliders();
+		update_chart();
+		document.getElementById("led").innerHTML = "<div class=\"led-green\"></div>";
+		}
 	}
 
 // Button handling
@@ -215,5 +220,5 @@ function on_capture_click(event) {
 	jsonObj["sampleSecs"] = sampleSeconds.toString();
 	jsonObj["scale"] = scale;
     websocket.send(JSON.stringify(jsonObj));
-	document.getElementById("led").innerHTML = "<div class=\"led-red\"></div>";
+	document.getElementById("led").innerHTML = (sampleSeconds == 0) ? "<div class=\"led-yellow\"></div>" : "<div class=\"led-red\"></div>";
 	}

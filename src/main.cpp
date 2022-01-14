@@ -2,6 +2,7 @@
 #include <Wire.h>  
 #include <FS.h>
 #include <LittleFS.h>
+#include <esp_task_wdt.h>
 #include "config.h"
 #include "nv_data.h"
 #include "wifi_cfg.h"
@@ -9,7 +10,24 @@
 #include "ina226.h"
 
 const char* FwRevision = "0.90";
+static const char* TAG = "main";
+volatile bool DataReadyFlag = false;
+volatile bool GateOpenFlag = false;
 
+#define MSG_GATE_OPEN 1234
+
+volatile MEASURE_t Measure;
+volatile int16_t* Buffer = NULL; 
+int MaxSamples;
+
+static void wifi_task(void* pvParameter);
+static void capture_task(void* pvParameter);
+
+// workaround for not having access to 'make menuconfig' to configure the stack size for the
+// setup and loop task is to create a new main task with desired stack size, and then delete setup 
+// task. 
+// Core 0 : low level esp-idf wifi code, web server and socket communication
+// Core 1 : capture task
 
 void setup() {
 	pinMode(pinAlert, INPUT); // external pullup, active low
@@ -19,74 +37,114 @@ void setup() {
 	pinMode(pinFET1, OUTPUT); // external pulldown
 	pinMode(pinFET05, OUTPUT); // external pulldown
 
-	Wire.begin(pinSDA,pinSCL); 
-	Wire.setClock(2000000);
-
 	Serial.begin(115200);
-	Serial.println();
-	Serial.printf("ESP32_INA226 v%s compiled on %s at %s\n\n", FwRevision, __DATE__, __TIME__);
+	ESP_LOGI(TAG,"ESP32_INA226 v%s compiled on %s at %s\n\n", FwRevision, __DATE__, __TIME__);
+    ESP_LOGD(TAG, "Max task priority = %d", configMAX_PRIORITIES-1);
+    ESP_LOGD(TAG, "main_task : setup and loop running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));    
 
 	nv_options_load(Options);
-	
+
+	// web server and web socket connection handler on core 0 along with low level wifi actions (ESP-IDF code)
+    xTaskCreatePinnedToCore(&wifi_task, "wifi_task", 4096, NULL, 1, NULL, CORE_0);
+    // capture task on core 1 
+	xTaskCreatePinnedToCore(&capture_task, "capture_task", 4096, NULL, configMAX_PRIORITIES-1, NULL, CORE_1);
+
+	// destroy loopTask which called setup() from arduino:app_main()
+    vTaskDelete(NULL);
+    }
+
+
+void loop(){
+    esp_task_wdt_reset();
+	}
+
+
+static void wifi_task(void* pVParameter) {
+    ESP_LOGD(TAG, "wifi_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
+	ESP_LOGI(TAG,"Starting web server");
+    // do NOT format, partition is built and flashed using 
+	// 1. PlatformIO Build FileSystem Image
+	// 2. Upload FileSystem Image    
+    if (!LittleFS.begin(false)) { 
+		ESP_LOGE(TAG, "Cannot mount LittleFS, Rebooting");
+		delay(1000);
+		ESP.restart();
+		}    
+	// initialize web server and web socket interface	
+	wifi_init();
+	while (1) {
+		ws.cleanupClients();
+		if (DataReadyFlag == true) {
+			DataReadyFlag = false;
+			if (SocketConnectedFlag == true) { 
+				ESP_LOGI(TAG,"Tx captured samples");
+				int numBytes = 4 + Measure.nSamples*4;
+				ws.binary(clientID, (uint8_t*)Buffer, numBytes); 
+				}
+			}
+		else 
+		if (GateOpenFlag){
+			GateOpenFlag = false;
+			if (SocketConnectedFlag == true) { 
+				ESP_LOGI(TAG,"Tx Gate Open");
+				int16_t msg = MSG_GATE_OPEN;
+				ws.binary(clientID, (uint8_t*)&msg, 2); 
+				}
+			}	
+		vTaskDelay(1);
+		}
+	}
+
+
+static void capture_task(void* pvParameter)  {	
+    ESP_LOGD(TAG, "capture_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
+	Wire.begin(pinSDA,pinSCL); 
+	Wire.setClock(1000000);
 	uint16_t val;
 	ina226_read_reg(REG_ID, &val);
 	if (val != 0x5449) {
-		Serial.printf("INA226 Manufacturer ID read = 0x%04X, expected 0x5449\n", val);
-		Serial.println("Halting...");
+		ESP_LOGE(TAG,"INA226 Manufacturer ID read = 0x%04X, expected 0x5449\n", val);
+		ESP_LOGE(TAG,"Halting...");
 		while (1){}
 		}
 
 	ina226_reset();
-	// Sample buffer contains 16-bit Vbus and Shunt ADC signed samples
-	// First two entries contain the current scale and sample period
-	Buffer = (int16_t*)malloc((2+MAX_SAMPLES*2)*sizeof(int16_t));
+	// get largest malloc-able block of byte-addressable free memory
+	int32_t maxBufferBytes = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+	ESP_LOGI(TAG, "Free memory malloc-able for sample Buffer = %d bytes", maxBufferBytes);
 
+	Buffer = (int16_t*)malloc(maxBufferBytes);
+	if (Buffer == nullptr) {
+		ESP_LOGE(TAG, "Could not allocate sample Buffer with %d bytes", maxBufferBytes);
+		ESP_LOGI(TAG,"Halting...");
+		while (1){}
+		}
+
+	// Buffer[0] = current scale (int16_t)
+	// Buffer[1] = sample period in ms (int16_t)
+	// Buffer[2*n+2] = Vbus ADC sample (int16_t), n = 0 ... MaxSamples-1
+	// Buffer[2*n+3] = Shunt ADC sample (int16_t), n = 0 ... MaxSamples-1
+	MaxSamples = (maxBufferBytes - 4)/4;
+	ESP_LOGI(TAG, "Max Buffer Samples = %d", MaxSamples);
 	//nv_options_reset(Options);
 	//nv_config_reset(ConfigTbl);
    	
-	Serial.println("Measuring one-shot sample times");
-	Measure.scale = SCALE_LO;
-	for (int inx = 0; inx < NUM_CFG; inx++) {
-		Measure.cfg = Config[inx].reg | 0x0003;
-		ina226_capture_oneshot(Measure);
-		}
 
-#if 0
-	Serial.println("Measuring triggered sample-rates");
-	for (int inx = 0; inx < NUM_CFG; inx++) {
-		Measure.cfg = Config[inx].reg | 0x0003;
-		Measure.periodUs = Config[inx].periodUs;
-		Measure.nSamples = 2000;
-		ina226_capture_triggered(Measure, Buffer);
-		}
-#endif
-
-	Serial.println("Starting web server");
-	if (!LittleFS.begin(true)){
-		Serial.println("LittleFS mount error");
-		return;
-		}  
-	wifi_init();
-	}
-
-
-void loop() {
-	ws.cleanupClients();
-	if (bCapture) {
-		bCapture = false;
-		if (Measure.nSamples == 0) {
-			Serial.printf("Capturing gated samples using cfg = 0x%04X, scale %d\n", Measure.cfg, Measure.scale );
-			ina226_capture_gated(Measure, Buffer);
+	while (1){
+			if (CaptureFlag == true) {
+				CaptureFlag = false;
+				if (Measure.nSamples == 0) {
+					ESP_LOGI(TAG,"Capturing gated samples using cfg = 0x%04X, scale %d\n", Measure.cfg, Measure.scale );
+					ina226_capture_gated(Measure, Buffer);
+					}
+				else {
+					ESP_LOGI(TAG,"Capturing %d samples using cfg = 0x%04X, scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
+					ina226_capture_triggered(Measure, Buffer);
+					}
+				DataReadyFlag = true;
+				}
+			vTaskDelay(1);
 			}
-		else {
-			Serial.printf("Capturing %d samples using cfg = 0x%04X, scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
-			ina226_capture_triggered(Measure, Buffer);
-			}
-		if (bConnected) { 
-     		Serial.println("Transmitting samples");
-			ws.binary(clientID, (uint8_t*)Buffer, 4 + Measure.nSamples*4); // size in bytes
-			}
-		}
 	}
 
 

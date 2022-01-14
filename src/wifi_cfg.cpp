@@ -5,7 +5,6 @@
 #include <LittleFS.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <AsyncElegantOTA.h>
 #include <ArduinoJson.h>
 #include "config.h"
 #include "nv_data.h"
@@ -23,8 +22,8 @@ AsyncWebServer* pServer = NULL;
 AsyncWebSocket ws("/ws");
 
 uint32_t clientID;
-bool bConnected = false;
-bool bCapture = false;
+bool SocketConnectedFlag = false;
+bool CaptureFlag = false;
 
 void socket_handle_message(void *arg, uint8_t *data, size_t len);
 void socket_event_handler(AsyncWebSocket *server,
@@ -83,7 +82,7 @@ static void set_defaults_handler(AsyncWebServerRequest *request) {
 
 static void restart_handler(AsyncWebServerRequest *request) {
     request->send(200, "text/html", "Restarting ...");  
-	Serial.println("Restarting ESP32");
+	ESP_LOGI(TAG,"Restarting ESP32");
 	Serial.flush();
 	delay(100);
     esp_restart();
@@ -104,7 +103,7 @@ static void get_handler(AsyncWebServerRequest *request) {
         }
 
     if (bChange == true) {
-        Serial.println("Options changed");
+        ESP_LOGI(TAG,"Options changed");
 		nv_options_store(Options);
         bChange = false;
         }
@@ -113,26 +112,23 @@ static void get_handler(AsyncWebServerRequest *request) {
 
 
 static void wifi_start_as_ap() {
-	Serial.printf("Starting Access Point %s with no password\n", szAPSSID);
+	ESP_LOGI(TAG,"Starting Access Point with SSID=%s, no password\n", szAPSSID);
 	WiFi.softAP(szAPSSID);
 	IPAddress IP = WiFi.softAPIP();
-	Serial.print("AP IP address : ");
-	Serial.println(IP);
+	ESP_LOGI(TAG, "Web Server IP address : %s", IP.toString());
 	}
 
 
 static void wifi_start_as_station() {
-	Serial.printf("Connecting as station to SSID %s\n", Options.ssid);
+	ESP_LOGI(TAG,"Connecting as station to Access Point with SSID=%s\n", Options.ssid);
     WiFi.mode(WIFI_STA);
     WiFi.begin(Options.ssid.c_str(), Options.password.c_str());
     if (WiFi.waitForConnectResult(10000UL) != WL_CONNECTED) {
-    	Serial.printf("Connection failed!\n");
+    	ESP_LOGI(TAG,"Connection failed!\n");
     	wifi_start_as_ap();
     	}
 	else {
-    	Serial.println();
-    	Serial.print("Local IP Address: ");
-    	Serial.println(WiFi.localIP());
+    	ESP_LOGI(TAG, "Web Server IP Address: %s", WiFi.localIP().toString());
 		}
 	}
 
@@ -147,7 +143,7 @@ void wifi_init() {
 		}
 	
 	if (!MDNS.begin("meter")) { // Use http://meter.local for web server page
-		Serial.println("Error starting mDNS service");
+		ESP_LOGI(TAG,"Error starting mDNS service");
 	    }
     pServer = new AsyncWebServer(80);
     if (pServer == NULL) {
@@ -164,8 +160,6 @@ void wifi_init() {
     pServer->on("/restart", HTTP_GET, restart_handler);
     pServer->serveStatic("/", LittleFS, "/");
 
-    // support for OTA firmware update using url http://<ip address>/update
-    AsyncElegantOTA.begin(pServer);  
     pServer->begin();   
 	MDNS.addService("http", "tcp", 80);
     }
@@ -180,13 +174,13 @@ void socket_event_handler(AsyncWebSocket *server,
 
     switch (type) {
         case WS_EVT_CONNECT:
-            Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+            ESP_LOGI(TAG,"WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
 			clientID = client->id();
-			bConnected = true;
+			SocketConnectedFlag = true;
             break;
         case WS_EVT_DISCONNECT:
-            Serial.printf("WebSocket client #%u disconnected\n", client->id());
-			bConnected = false;
+            ESP_LOGI(TAG,"WebSocket client #%u disconnected\n", client->id());
+			SocketConnectedFlag = false;
 			clientID = 0;
             break;
         case WS_EVT_DATA:
@@ -206,8 +200,7 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
         StaticJsonDocument<size> json;
         DeserializationError err = deserializeJson(json, data);
         if (err) {
-            Serial.print(F("deserializeJson() failed with code "));
-            Serial.println(err.c_str());
+            ESP_LOGI(TAG, "deserializeJson() failed with code %s", err.c_str());
             return;
 			}
 
@@ -216,15 +209,15 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
         const char *szSampleSeconds = json["sampleSecs"];
         const char *szScale = json["scale"];
 
-		Serial.printf("json[\"action\"]= %s\n", szAction);
-		Serial.printf("json[\"cfgIndex\"]= %s\n", szCfgIndex);
-		Serial.printf("json[\"sampleSecs\"]= %s\n", szSampleSeconds);
-		Serial.printf("json[\"scale\"]= %s\n", szScale);
+		ESP_LOGI(TAG,"json[\"action\"]= %s\n", szAction);
+		ESP_LOGI(TAG,"json[\"cfgIndex\"]= %s\n", szCfgIndex);
+		ESP_LOGI(TAG,"json[\"sampleSecs\"]= %s\n", szSampleSeconds);
+		ESP_LOGI(TAG,"json[\"scale\"]= %s\n", szScale);
 
         int cfgIndex = strtol(szCfgIndex, NULL, 10);
         int sampleSeconds = strtol(szSampleSeconds, NULL, 10);
 		int sampleRate = 1000000/Config[cfgIndex].periodUs;
-		int numSamples = sampleSeconds != 999 ? sampleSeconds*sampleRate : 0;
+		int numSamples = sampleSeconds*sampleRate;
 		int scale = strtol(szScale, NULL, 10);
 		
 		Measure.cfg = Config[cfgIndex].reg | 0x0003;
@@ -233,7 +226,7 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 		Measure.periodUs = Config[cfgIndex].periodUs;
 
         if (strcmp(szAction, "capture") == 0) {
-			bCapture = true;
+			CaptureFlag = true;
 	        }
     	}
 	}
