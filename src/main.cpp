@@ -11,6 +11,9 @@ const char* FwRevision = "0.90";
 static const char* TAG = "main";
 volatile bool DataReadyFlag = false;
 volatile bool GateOpenFlag = false;
+volatile bool SocketConnectedFlag = false;
+volatile bool CaptureFlag = false;
+uint32_t ClientID;
 
 #define WIFI_TASK_PRIORITY 		1
 #define CAPTURE_TASK_PRIORITY 	(configMAX_PRIORITIES-1)
@@ -78,7 +81,7 @@ static void wifi_task(void* pVParameter) {
 			if (SocketConnectedFlag == true) { 
 				ESP_LOGI(TAG,"Tx captured samples");
 				int numBytes = 4 + Measure.nSamples*4;
-				ws.binary(clientID, (uint8_t*)Buffer, numBytes); 
+				ws.binary(ClientID, (uint8_t*)Buffer, numBytes); 
 				}
 			}
 		else 
@@ -87,7 +90,7 @@ static void wifi_task(void* pVParameter) {
 			if (SocketConnectedFlag == true) { 
 				ESP_LOGI(TAG,"Tx Gate Open");
 				int16_t msg = MSG_GATE_OPEN;
-				ws.binary(clientID, (uint8_t*)&msg, 2); 
+				ws.binary(ClientID, (uint8_t*)&msg, 2); 
 				}
 			}	
 		vTaskDelay(1);

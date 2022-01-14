@@ -21,9 +21,6 @@ const char* szAPSSID = "ESP32_INA226";
 AsyncWebServer* pServer = NULL;
 AsyncWebSocket ws("/ws");
 
-uint32_t clientID;
-bool SocketConnectedFlag = false;
-bool CaptureFlag = false;
 
 void socket_handle_message(void *arg, uint8_t *data, size_t len);
 void socket_event_handler(AsyncWebSocket *server,
@@ -176,13 +173,13 @@ void socket_event_handler(AsyncWebSocket *server,
     switch (type) {
         case WS_EVT_CONNECT:
             ESP_LOGI(TAG,"WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
-			clientID = client->id();
+			ClientID = client->id();
 			SocketConnectedFlag = true;
             break;
         case WS_EVT_DISCONNECT:
             ESP_LOGI(TAG,"WebSocket client #%u disconnected\n", client->id());
 			SocketConnectedFlag = false;
-			clientID = 0;
+			ClientID = 0;
             break;
         case WS_EVT_DATA:
             socket_handle_message(arg, data, len);
