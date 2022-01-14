@@ -114,8 +114,8 @@ static void get_handler(AsyncWebServerRequest *request) {
 static void wifi_start_as_ap() {
 	ESP_LOGI(TAG,"Starting Access Point with SSID=%s, no password\n", szAPSSID);
 	WiFi.softAP(szAPSSID);
-	IPAddress IP = WiFi.softAPIP();
-	ESP_LOGI(TAG, "Web Server IP address : %s", IP.toString());
+	IPAddress ipaddr = WiFi.softAPIP();
+	ESP_LOGI(TAG, "Web Server IP address : %s", ipaddr.toString().c_str());
 	}
 
 
@@ -128,7 +128,8 @@ static void wifi_start_as_station() {
     	wifi_start_as_ap();
     	}
 	else {
-    	ESP_LOGI(TAG, "Web Server IP Address: %s", WiFi.localIP().toString());
+		IPAddress ipaddr = WiFi.localIP();
+    	ESP_LOGI(TAG, "Web Server IP Address: %s", ipaddr.toString().c_str());
 		}
 	}
 

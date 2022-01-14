@@ -12,6 +12,9 @@ static const char* TAG = "main";
 volatile bool DataReadyFlag = false;
 volatile bool GateOpenFlag = false;
 
+#define WIFI_TASK_PRIORITY 		1
+#define CAPTURE_TASK_PRIORITY 	(configMAX_PRIORITIES-1)
+
 #define MSG_GATE_OPEN 1234
 
 volatile MEASURE_t Measure;
@@ -36,14 +39,14 @@ void setup() {
 	Serial.begin(115200);
 	ESP_LOGI(TAG,"ESP32_INA226 v%s compiled on %s at %s\n\n", FwRevision, __DATE__, __TIME__);
     ESP_LOGD(TAG, "Max task priority = %d", configMAX_PRIORITIES-1);
-    ESP_LOGD(TAG, "main_task : setup and loop running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));    
+    ESP_LOGD(TAG, "arduino loopTask : setup() running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));    
 
 	nv_options_load(Options);
 
 	// web server and web socket connection handler on core 0 along with low level wifi actions (ESP-IDF code)
-    xTaskCreatePinnedToCore(&wifi_task, "wifi_task", 4096, NULL, 1, NULL, CORE_0);
+    xTaskCreatePinnedToCore(&wifi_task, "wifi_task", 4096, NULL, WIFI_TASK_PRIORITY, NULL, CORE_0);
     // capture task on core 1, don't want i2c capture to be pre-empted as far as possible to maintain sampling rate. 
-	xTaskCreatePinnedToCore(&capture_task, "capture_task", 4096, NULL, configMAX_PRIORITIES-1, NULL, CORE_1);
+	xTaskCreatePinnedToCore(&capture_task, "capture_task", 4096, NULL, CAPTURE_TASK_PRIORITY, NULL, CORE_1);
 
 	// destroy loopTask which called setup() from arduino:app_main()
     vTaskDelete(NULL);
