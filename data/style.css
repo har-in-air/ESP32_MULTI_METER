@@ -38,6 +38,10 @@ section {
 	font-size:1.0em;
 	}
 
+canvas {
+	background-color: rgba(0,0,0,0.1);
+ }	
+
 h1{
 	color:white;
 	border-radius:0.5em;
@@ -62,6 +66,7 @@ table{
 
 td {
 	text-align: left;
+	margin-right: 1.0em;
 	}
 
 

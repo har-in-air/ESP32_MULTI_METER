@@ -159,7 +159,7 @@ static void wifi_task(void* pVParameter) {
 
 
 static void capture_task(void* pvParameter)  {	
-    esp_log_timestamp(TAG, "capture_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
+    ESP_LOGI(TAG, "capture_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
 	Wire.begin(pinSDA,pinSCL); 
 	Wire.setClock(1000000);
 	uint16_t val;

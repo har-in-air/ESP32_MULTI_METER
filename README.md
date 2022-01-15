@@ -109,4 +109,5 @@ Maximum and minimum current values are more accurately captured.
 
 # Credits
 * [Range switching with FET switches](https://www.youtube.com/watch?v=xSEYPP5Xsi0)
+* [Javascript scrolling chart](https://stackoverflow.com/questions/35854244/how-can-i-create-a-horizontal-scrolling-chart-js-line-chart-with-a-locked-y-axis)
 

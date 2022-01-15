@@ -1,7 +1,6 @@
 // Chart Initialization
 
 let c = document.getElementById("myChart");
-
 let Ctxt = document.getElementById("myChart").getContext("2d");
 
 let timeMs = 0;
