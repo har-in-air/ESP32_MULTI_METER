@@ -68,6 +68,21 @@ This is an example of gated capture, which records the load current & voltage on
 
 <img src="docs/gated_capture_record.gif">
 
+## Chossing Sample Rates
+
+Sampling at 200Hz will result in less noise and allow you to capture longer intervals. 
+However, it may not capture brief current pulses and accurate maximum/minimum values.
+
+In the first gated capture display, a sample rate of 200Hz was selected for capture.
+
+<img src="docs/capture_gated_200Hz.png">
+
+In the second gated capture display, a sample rate of 1000Hz was selected for capture.
+It is noisier, but captures the narrow current pulses due to WiFi transmission bursts from the DUT ESP32. 
+Maximum and minimum current values are more accurately captured.
+
+<img src="docs/capture_gated_1000Hz.png">
+
 # Build Environment
 * Ubuntu 20.04 LTS amdx64
 * Visual Studio Code with PlatformIO plugin using Arduino framework targeting `esp32dev` board. 
@@ -90,20 +105,7 @@ This is an example of gated capture, which records the load current & voltage on
 * 1.0 ohm 1% shunt resistor for LOW current scale.
 * SS56 schottky diode, protects the 1.0 ohm shunt resistor when the LOW current scale is selected.
 
-# Usage
 
-Sampling at 200Hz will result in less noise and allow you to capture longer intervals. However, it may not capture brief current pulses and accurate maximum/minimum values.
-
-
-In the first capture snapshot, a sample rate of 200Hz was selected.
-
-<img src="docs/capture_gated_200Hz.png">
-
-In the second capture snapshot, a sample rate of 1000Hz was selected. 
-It is noisier, but captures the narrow current pulses due to WiFi transmission bursts. 
-Maximum and minimum current values are more accurately captured.
-
-<img src="docs/capture_gated_1000Hz.png">
 
 # Credits
 * [Range switching with FET switches](https://www.youtube.com/watch?v=xSEYPP5Xsi0)
