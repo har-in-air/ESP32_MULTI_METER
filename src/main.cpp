@@ -9,6 +9,7 @@
 
 const char* FwRevision = "0.90";
 static const char* TAG = "main";
+
 volatile bool DataReadyFlag = false;
 volatile bool GateOpenFlag = false;
 volatile bool SocketConnectedFlag = false;
@@ -18,8 +19,6 @@ uint32_t ClientID;
 
 #define WIFI_TASK_PRIORITY 		1
 #define CAPTURE_TASK_PRIORITY 	(configMAX_PRIORITIES-1)
-
-
 
 volatile MEASURE_t Measure;
 volatile int16_t* Buffer = NULL; 
@@ -46,8 +45,8 @@ void setup() {
 
 	Serial.begin(115200);
 	ESP_LOGI(TAG,"ESP32_INA226 v%s compiled on %s at %s\n\n", FwRevision, __DATE__, __TIME__);
-    ESP_LOGD(TAG, "Max task priority = %d", configMAX_PRIORITIES-1);
-    ESP_LOGD(TAG, "arduino loopTask : setup() running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));    
+    ESP_LOGI(TAG, "Max task priority = %d", configMAX_PRIORITIES-1);
+    ESP_LOGI(TAG, "arduino loopTask : setup() running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));    
 
 	nv_options_load(Options);
 
@@ -96,14 +95,14 @@ static void wifi_task(void* pVParameter) {
 				default :
 					if (GateOpenFlag){
 						GateOpenFlag = false;
-						ESP_LOGI(TAG,"Socket msg : Tx Gate Open");
+						ESP_LOGD(TAG,"Socket msg : Tx Gate Open");
 						msg = MSG_GATE_OPEN;
 						ws.binary(ClientID, (uint8_t*)&msg, 2); 
 						}	
 					else 
 					if (DataReadyFlag == true) {
 						DataReadyFlag = false;
-						ESP_LOGI(TAG,"Socket msg : Tx Start");
+						ESP_LOGD(TAG,"Socket msg : Tx Start");
 						if (Measure.nSamples > MAX_TRANSMIT_SAMPLES) {
 							numBytes = 6 + MAX_TRANSMIT_SAMPLES*4;
 							ws.binary(ClientID, (uint8_t*)Buffer, numBytes); 
@@ -122,7 +121,7 @@ static void wifi_task(void* pVParameter) {
 				case ST_TX :
 					if (TransmitOKFlag == true) {
 						TransmitOKFlag = false;
-						ESP_LOGI(TAG,"Socket msg : Tx ...");
+						ESP_LOGD(TAG,"Socket msg : Tx ...");
 						SamplesRemaining = Measure.nSamples - txSamples;
 						pb = Buffer + bufferOffset; 
 						if (SamplesRemaining > MAX_TRANSMIT_SAMPLES) {
@@ -145,7 +144,7 @@ static void wifi_task(void* pVParameter) {
 				case ST_TX_COMPLETE :
 					if (TransmitOKFlag == true) {
 						TransmitOKFlag = false;
-						ESP_LOGI(TAG,"Socket msg : Tx Complete");
+						ESP_LOGD(TAG,"Socket msg : Tx Complete");
 						msg = MSG_TX_COMPLETE;
 						ws.binary(ClientID, (uint8_t*)&msg, 2); 
 						state = ST_IDLE;
@@ -160,7 +159,7 @@ static void wifi_task(void* pVParameter) {
 
 
 static void capture_task(void* pvParameter)  {	
-    ESP_LOGD(TAG, "capture_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
+    esp_log_timestamp(TAG, "capture_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
 	Wire.begin(pinSDA,pinSCL); 
 	Wire.setClock(1000000);
 	uint16_t val;
@@ -179,14 +178,10 @@ static void capture_task(void* pvParameter)  {
 	Buffer = (int16_t*)malloc(maxBufferBytes);
 	if (Buffer == nullptr) {
 		ESP_LOGE(TAG, "Could not allocate sample Buffer with %d bytes", maxBufferBytes);
-		ESP_LOGI(TAG,"Halting...");
+		ESP_LOGE(TAG,"Halting...");
 		while (1){}
 		}
 
-	// Buffer[0] = current scale (int16_t)
-	// Buffer[1] = sample period in ms (int16_t)
-	// Buffer[2*n+2] = Vbus ADC sample (int16_t), n = 0 ... MaxSamples-1
-	// Buffer[2*n+3] = Shunt ADC sample (int16_t), n = 0 ... MaxSamples-1
 	MaxSamples = (maxBufferBytes - 4)/4;
 	ESP_LOGI(TAG, "Max Buffer Samples = %d", MaxSamples);
 	//nv_options_reset(Options);
@@ -197,11 +192,11 @@ static void capture_task(void* pvParameter)  {
 			if (CaptureFlag == true) {
 				CaptureFlag = false;
 				if (Measure.nSamples == 0) {
-					ESP_LOGI(TAG,"Capturing gated samples using cfg = 0x%04X, scale %d\n", Measure.cfg, Measure.scale );
+					ESP_LOGD(TAG,"Capturing gated samples using cfg = 0x%04X, scale %d\n", Measure.cfg, Measure.scale );
 					ina226_capture_gated(Measure, Buffer);
 					}
 				else {
-					ESP_LOGI(TAG,"Capturing %d samples using cfg = 0x%04X, scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
+					ESP_LOGD(TAG,"Capturing %d samples using cfg = 0x%04X, scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
 					ina226_capture_triggered(Measure, Buffer);
 					}
 				DataReadyFlag = true;

@@ -48,6 +48,24 @@ The web page is at `http://meter.local` as before.
 If you do not have OS mDNS support, and you still want to use the meter in station mode, 
 you will need a serial debug connection to the ESP32. Check the serial monitor log on reboot to get the station IP address assigned to the meter by the external WiFi Access Point. 
 
+## Device Under Test Example
+
+The power supply is an 18650 Li-Ion battery. The DUT is an ESP32 development board. 
+
+On reset, the DUT ESP32 executes the following sequence :
+1. Connects to a WiFi Internet Access Point as a station.
+2. Connects to a Network Time Protocol (NTP) server to get local time.
+3. Enters deep sleep for 10 seconds before restarting. 
+
+The DUT ESP32 sets the gate high on entering setup(), and resets the gate just before going to sleep. 
+
+This is an example of an 8-second capture @ 1000Hz, HIGH scale. The ESP32 is active for approximately 2.5 seconds and in deep-sleep the rest of the time.
+The residual deep-sleep mode current is ~10mA due to the USB-UART IC, LDO regulator quiescent current etc. on the ESP32 development board.
+
+<img src="docs/8s_capture_record.gif">
+
+This is an example of gated capture, which records the load current & voltage only while the DUT ESP32 is active, i.e. not in deep-sleep.
+
 <img src="docs/gated_capture_record.gif">
 
 # Build Environment
@@ -76,17 +94,6 @@ you will need a serial debug connection to the ESP32. Check the serial monitor l
 
 Sampling at 200Hz will result in less noise and allow you to capture longer intervals. However, it may not capture brief current pulses and accurate maximum/minimum values.
 
-Here is an example :
-
-The power supply is an 18650 Li-Ion battery. The DUT is an ESP32 development board. 
-
-On reset, the DUT ESP32 executes the following sequence :
-1. Connects to a WiFi Internet Access Point as a station.
-2. Connects to a Network Time Protocol (NTP) server to get local time.
-3. Enters deep sleep for 10 seconds before restarting. 
-
-The DUT ESP32 sets the gate high on entering setup(), and resets the gate just before going to sleep. 
-So the gated capture records the load current & voltage while the DUT ESP32 is active, i.e. not in deep-sleep.
 
 In the first capture snapshot, a sample rate of 200Hz was selected.
 
