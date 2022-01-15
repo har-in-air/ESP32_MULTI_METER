@@ -3,7 +3,9 @@
 ESP32 development board with INA226 sensor used to capture and record load bus voltage
 and load current of a Device Under Test (DUT). 
 
+<p align="center">
 <img src="docs/block.png">
+</p>
 
 Meter configuration, capture and display functions are available via a web page running on a WiFi web server. 
 
@@ -34,7 +36,9 @@ Connect to this WiFi AP, then open the home page `http://192.168.4.1` in a brows
 If your OS has mDNS support, use the url `http://meter.local`.
 MacOS has built-in support for mDNS. For Windows, install Bonjour. For Ubuntu, install Avahi.
 
+<p align="center">
 <img src="docs/home_page.png">
+</p>
 
 Full meter functionality is available in this stand-alone mode. 
 
@@ -52,36 +56,51 @@ you will need a serial debug connection to the ESP32. Check the serial monitor l
 
 The power supply is an 18650 Li-Ion battery. The DUT is an ESP32 development board. 
 
-On reset, the DUT ESP32 executes the following sequence :
-1. Connects to a WiFi Internet Access Point as a station.
-2. Connects to a Network Time Protocol (NTP) server to get local time.
-3. Enters deep sleep for 10 seconds before restarting. 
+On reset, the DUT ESP32 executes the following cyclical sequence :
+1. Connects to a WiFi Internet Access Point as a station
+2. Connects to a Network Time Protocol (NTP) server to get local time
+3. Enters deep sleep for 10 seconds
+4. Restarts
 
-The DUT ESP32 sets the gate high on entering setup(), and resets the gate just before going to sleep. 
+The DUT ESP32 uses a gpio pin to set the current meter gate high on restart, and resets the gate just before going to sleep. The DUT ESP32 is active for approximately 2.5 seconds and in deep-sleep for 10 seconds.
 
-This is an example of an 8-second capture @ 1000Hz, HIGH scale. The ESP32 is active for approximately 2.5 seconds and in deep-sleep the rest of the time.
-The residual deep-sleep mode current is ~10mA due to the USB-UART IC, LDO regulator quiescent current etc. on the ESP32 development board.
+This is an example of an 8-second capture @ 1000Hz, HIGH scale. The capture was manually triggered approximately half-way during the DUT ESP32 deep-sleep interval.
 
+The deep-sleep mode current is ~10mA  due to the USB-UART interface and LDO regulator on the DUT ESP32 development board. 
+
+In active mode, we can see high current pulses  (> 400mA),  corresponding to WiFi radio transmission bursts.
+
+<p align="center">
 <img src="docs/8s_capture_record.gif">
+</p>
 
-This is an example of gated capture, which records the load current & voltage only while the DUT ESP32 is active, i.e. not in deep-sleep.
+This is an example of gated capture. It records the load current & voltage only while the DUT ESP32 is active.
 
+<p align="center">
 <img src="docs/gated_capture_record.gif">
+</p>
 
 ## Choosing Sample Rates
 
-Sampling at 200Hz will result in less noise and allow you to capture longer intervals. 
-However, it may not capture brief current pulses and accurate maximum/minimum values.
+Sampling at 200Hz will result in less noise due to sample averaging. It also allows you to capture longer intervals.
+
+However, it may not capture brief current pulses or record accurate maximum/minimum values.
 
 In the first gated capture display, a sample rate of 200Hz was selected for capture.
 
+<p align="center">
 <img src="docs/capture_gated_200Hz.png">
+</p>
 
 In the second gated capture display, a sample rate of 1000Hz was selected for capture.
-It is noisier, but captures the narrow current pulses due to WiFi transmission bursts from the DUT ESP32. 
-Maximum and minimum current values are more accurately captured.
 
+<p align="center">
 <img src="docs/capture_gated_1000Hz.png">
+</p>
+
+The voltage measurement is noisier, but it captures all of the current pulses due to WiFi transmission bursts.
+
+Maximum and minimum current values are more accurately captured.
 
 # Build Environment
 * Ubuntu 20.04 LTS amdx64
@@ -104,8 +123,6 @@ Maximum and minimum current values are more accurately captured.
 * 0.05ohm 1% shunt resistor for HIGH current scale.
 * 1.0 ohm 1% shunt resistor for LOW current scale.
 * SS56 schottky diode, protects the 1.0 ohm shunt resistor when the LOW current scale is selected.
-
-
 
 # Credits
 * [Range switching with FET switches](https://www.youtube.com/watch?v=xSEYPP5Xsi0)
