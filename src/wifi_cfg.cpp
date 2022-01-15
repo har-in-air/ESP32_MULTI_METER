@@ -194,37 +194,43 @@ void socket_event_handler(AsyncWebSocket *server,
 void socket_handle_message(void *arg, uint8_t *data, size_t len) {
     AwsFrameInfo *info = (AwsFrameInfo*)arg;
     if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
-        const uint8_t size = JSON_OBJECT_SIZE(4);
-        StaticJsonDocument<size> json;
-        DeserializationError err = deserializeJson(json, data);
-        if (err) {
-            ESP_LOGI(TAG, "deserializeJson() failed with code %s", err.c_str());
-            return;
+		if (data[0] == 'x') {
+			//ESP_LOGI(TAG, "Transmit OK Ack");
+			TransmitOKFlag = true;
 			}
+		else {
+			const uint8_t size = JSON_OBJECT_SIZE(4);
+			StaticJsonDocument<size> json;
+			DeserializationError err = deserializeJson(json, data);
+			if (err) {
+				ESP_LOGI(TAG, "deserializeJson() failed with code %s", err.c_str());
+				return;
+				}
 
-        const char *szAction = json["action"];
-        const char *szCfgIndex = json["cfgIndex"];
-        const char *szSampleSeconds = json["sampleSecs"];
-        const char *szScale = json["scale"];
+			const char *szAction = json["action"];
+			const char *szCfgIndex = json["cfgIndex"];
+			const char *szSampleSeconds = json["sampleSecs"];
+			const char *szScale = json["scale"];
 
-		ESP_LOGI(TAG,"json[\"action\"]= %s\n", szAction);
-		ESP_LOGI(TAG,"json[\"cfgIndex\"]= %s\n", szCfgIndex);
-		ESP_LOGI(TAG,"json[\"sampleSecs\"]= %s\n", szSampleSeconds);
-		ESP_LOGI(TAG,"json[\"scale\"]= %s\n", szScale);
+			ESP_LOGI(TAG,"json[\"action\"]= %s\n", szAction);
+			ESP_LOGI(TAG,"json[\"cfgIndex\"]= %s\n", szCfgIndex);
+			ESP_LOGI(TAG,"json[\"sampleSecs\"]= %s\n", szSampleSeconds);
+			ESP_LOGI(TAG,"json[\"scale\"]= %s\n", szScale);
 
-        int cfgIndex = strtol(szCfgIndex, NULL, 10);
-        int sampleSeconds = strtol(szSampleSeconds, NULL, 10);
-		int sampleRate = 1000000/Config[cfgIndex].periodUs;
-		int numSamples = sampleSeconds*sampleRate;
-		int scale = strtol(szScale, NULL, 10);
-		
-		Measure.cfg = Config[cfgIndex].reg | 0x0003;
-		Measure.scale = scale;
-		Measure.nSamples = numSamples;
-		Measure.periodUs = Config[cfgIndex].periodUs;
+			int cfgIndex = strtol(szCfgIndex, NULL, 10);
+			int sampleSeconds = strtol(szSampleSeconds, NULL, 10);
+			int sampleRate = 1000000/Config[cfgIndex].periodUs;
+			int numSamples = sampleSeconds*sampleRate;
+			int scale = strtol(szScale, NULL, 10);
+			
+			Measure.cfg = Config[cfgIndex].reg | 0x0003;
+			Measure.scale = scale;
+			Measure.nSamples = numSamples;
+			Measure.periodUs = Config[cfgIndex].periodUs;
 
-        if (strcmp(szAction, "capture") == 0) {
-			CaptureFlag = true;
-	        }
-    	}
+			if (strcmp(szAction, "capture") == 0) {
+				CaptureFlag = true;
+				}
+			}
+		}
 	}

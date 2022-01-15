@@ -13,16 +13,21 @@ volatile bool DataReadyFlag = false;
 volatile bool GateOpenFlag = false;
 volatile bool SocketConnectedFlag = false;
 volatile bool CaptureFlag = false;
+volatile bool TransmitOKFlag = false;
 uint32_t ClientID;
 
 #define WIFI_TASK_PRIORITY 		1
 #define CAPTURE_TASK_PRIORITY 	(configMAX_PRIORITIES-1)
 
-#define MSG_GATE_OPEN 1234
+
 
 volatile MEASURE_t Measure;
 volatile int16_t* Buffer = NULL; 
 int MaxSamples;
+
+#define ST_IDLE 		1
+#define ST_TX			2
+#define ST_TX_COMPLETE	3
 
 static void wifi_task(void* pvParameter);
 static void capture_task(void* pvParameter);
@@ -74,26 +79,82 @@ static void wifi_task(void* pVParameter) {
 		}    
 	// initialize web server and web socket interface	
 	wifi_init();
+	int state = ST_IDLE;
+	int bufferOffset = 0;
+	int txSamples = 0;
+	int SamplesRemaining = 0;
+	volatile int16_t* pb;
+	int numBytes;
+	int16_t msg;
+
 	while (1) {
+		vTaskDelay(1);
 		ws.cleanupClients();
-		if (DataReadyFlag == true) {
-			DataReadyFlag = false;
-			if (SocketConnectedFlag == true) { 
-				ESP_LOGI(TAG,"Tx captured samples");
-				int numBytes = 4 + Measure.nSamples*4;
-				ws.binary(ClientID, (uint8_t*)Buffer, numBytes); 
-				}
-			}
-		else 
-		if (GateOpenFlag){
-			GateOpenFlag = false;
-			if (SocketConnectedFlag == true) { 
-				ESP_LOGI(TAG,"Tx Gate Open");
-				int16_t msg = MSG_GATE_OPEN;
-				ws.binary(ClientID, (uint8_t*)&msg, 2); 
+		if (SocketConnectedFlag == true) { 
+			switch (state) {
+				case ST_IDLE :
+				default :
+					if (GateOpenFlag){
+						GateOpenFlag = false;
+						ESP_LOGI(TAG,"Socket msg : Tx Gate Open");
+						msg = MSG_GATE_OPEN;
+						ws.binary(ClientID, (uint8_t*)&msg, 2); 
+						}	
+					else 
+					if (DataReadyFlag == true) {
+						DataReadyFlag = false;
+						ESP_LOGI(TAG,"Socket msg : Tx Start");
+						if (Measure.nSamples > MAX_TRANSMIT_SAMPLES) {
+							numBytes = 6 + MAX_TRANSMIT_SAMPLES*4;
+							ws.binary(ClientID, (uint8_t*)Buffer, numBytes); 
+							bufferOffset += numBytes/2;
+							txSamples += MAX_TRANSMIT_SAMPLES;
+							state = ST_TX;
+							}
+						else {
+							numBytes = 6 + Measure.nSamples*4;
+							ws.binary(ClientID, (uint8_t*)Buffer, numBytes); 
+							state = ST_TX_COMPLETE;
+							}
+						}
+				break;
+
+				case ST_TX :
+					if (TransmitOKFlag == true) {
+						TransmitOKFlag = false;
+						ESP_LOGI(TAG,"Socket msg : Tx ...");
+						SamplesRemaining = Measure.nSamples - txSamples;
+						pb = Buffer + bufferOffset; 
+						if (SamplesRemaining > MAX_TRANSMIT_SAMPLES) {
+							numBytes = 2 + MAX_TRANSMIT_SAMPLES*4;
+							ws.binary(ClientID, (uint8_t*)pb, numBytes); 
+							bufferOffset += numBytes/2;
+							txSamples += MAX_TRANSMIT_SAMPLES;
+							state = ST_TX;
+							}
+						else {
+							if (SamplesRemaining > 0 ) {
+								numBytes = 2 + SamplesRemaining*4;
+								ws.binary(ClientID, (uint8_t*)pb, numBytes); 
+								}
+							state = ST_TX_COMPLETE;
+							}
+						}						
+				break;
+
+				case ST_TX_COMPLETE :
+					if (TransmitOKFlag == true) {
+						TransmitOKFlag = false;
+						ESP_LOGI(TAG,"Socket msg : Tx Complete");
+						msg = MSG_TX_COMPLETE;
+						ws.binary(ClientID, (uint8_t*)&msg, 2); 
+						state = ST_IDLE;
+						txSamples = 0;
+						bufferOffset = 0;
+						}
+				break;
 				}
 			}	
-		vTaskDelay(1);
 		}
 	}
 

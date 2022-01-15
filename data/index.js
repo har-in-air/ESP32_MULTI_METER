@@ -4,10 +4,14 @@ let c = document.getElementById("myChart");
 
 let Ctxt = document.getElementById("myChart").getContext("2d");
 
+let timeMs = 0;
 let periodMs = 1;
+let iScale = 0.05;
+let vScale = 0.00125;
 let Time = [];
 let Data_mA = [];
 let Data_V = [];
+
 for(let inx = 0; inx < 1000; inx++){
 	Time.push(inx);
 	Data_mA.push(0);
@@ -145,6 +149,7 @@ function update_chart() {
 let gateway = `ws://${window.location.hostname}/ws`;
 var websocket;
 
+
 window.addEventListener('load', on_window_load);
 
 function on_window_load(event) {
@@ -174,28 +179,51 @@ function on_ws_close(event) {
     setTimeout(init_web_socket, 2000);
 	}
 
+
 function on_ws_message(event) {
 	let view = new Int16Array(event.data);
 	if ((view.length == 1) && (view[0] == 1234)){
 		document.getElementById("led").innerHTML = "<div class=\"led-red\"></div>";
 		}
-	else {
-		let len = (view.length - 2) / 2;
+	else 
+	if ((view.length > 3) && (view[0] == 1111)){
+		// new capture tx start
+		periodMs = view[1];
+		iScale = view[2] == 0 ? 0.05 : 0.002381;
 		ChartInst.destroy();
+		timeMs = 0;
 		Time = [];
 		Data_mA = [];
 		Data_V = [];
-		periodMs = view[0];
-		let iScale = view[1] == 0 ? 0.05 : 0.002381;
-		let vScale = 0.00125;
-
-		for(var t = 0; t < len; t++){
-			Time.push(t*periodMs);
-			let ima = view[2*t+2] * iScale;
-			let v = view[2*t+3] * vScale;
+		let len = (view.length - 3) / 2;
+		for(let t = 0; t < len; t++){
+			Time.push(timeMs);
+			let ima = view[2*t+3] * iScale;
+			let v = view[2*t+4] * vScale;
 			Data_mA.push(ima);
 			Data_V.push(v);
+			timeMs += periodMs;
+			} 
+		// ready to receive next data packet 
+	    websocket.send("x");
+		}
+	else 
+	if ((view.length > 1) && (view[0] == 2222)){
+		let len = (view.length - 1) / 2;
+		for(let t = 0; t < len; t++){
+			Time.push(timeMs);
+			let ima = view[2*t+1] * iScale;
+			let v = view[2*t+2] * vScale;
+			Data_mA.push(ima);
+			Data_V.push(v);
+			timeMs += periodMs;
 			}  
+		// ready to receive next data packet 
+		websocket.send("x");
+		}
+	else		
+	if ((view.length == 1) && (view[0] == 3333)){
+		// tx complete
 		new_chart();
 		init_sliders();
 		update_chart();

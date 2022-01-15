@@ -14,6 +14,10 @@
 #define SCALE_HI	0 // Shunt R = 0.05 ohms, Full scale = 1.64A
 #define SCALE_LO	1 // Shunt R = 1.05 ohms, Full scale = 78mA
 
+#define MSG_GATE_OPEN	1234
+#define MSG_TX_START	1111
+#define MSG_TX			2222
+#define MSG_TX_COMPLETE	3333
 
 typedef struct {
 	// input
@@ -36,7 +40,8 @@ typedef struct {
 	uint32_t periodUs;
 	} CONFIG_t;
 
-#define NUM_CFG 3
+#define NUM_CFG 				3
+#define MAX_TRANSMIT_SAMPLES 	8000
 
 extern volatile int16_t* Buffer;
 extern const CONFIG_t Config[];
