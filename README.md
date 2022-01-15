@@ -11,16 +11,16 @@ Meter configuration, capture and display functions are available via a web page 
 
 Full-scale bus voltage = ~40V. 
 
-There are two ranges for current measurement : 
+Two ranges for current measurement : 
 * HIGH : Full-scale 1638mA, with a resolution of 50uA.
 * LOW : Full-scale 78mA, with a resolution of 2.4uA.
 
-There are 3 sample rate options :
+Three sample rate options :
 * 1000Hz : 1mS sample period, no sample averaging, vbus ADC conversion time = 140uS, shunt ADC conversion time = 332uS.
 * 500Hz : 2mS sample period, no sample averaging, vbus ADC conversion time 140uS, shunt ADC conversion time = 1100uS.
 * 200Hz : 5mS sample period, averaging 4 samples, vbus ADC conversion time 140uS, shunt ADC conversion time = 332uS.
 
-A maximum of 16000 samples can be captured with a single trigger. 
+Up to 16000 samples can be captured with a single trigger. 
 * Sample Rate = 1000Hz : Maximum 16 second capture.
 * Sample Rate = 500Hz : Maximum 32 second capture.
 * Sample Rate = 200Hz : Maximum 80 second capture.
