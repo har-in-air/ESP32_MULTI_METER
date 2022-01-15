@@ -1,6 +1,6 @@
 # ESP32_INA226_CURRENT_VOLTAGE_METER
 
-An ESP32 development board with an INA226 sensor is used to capture and record load bus voltage
+ESP32 development board with INA226 sensor used to capture and record load bus voltage
 and load current of a Device Under Test (DUT). 
 
 <img src="docs/block.png">
@@ -9,7 +9,7 @@ Meter configuration, capture and display functions are available via a web page 
 
 ## Features
 
-Full-scale bus voltage is ~40V. 
+Full-scale bus voltage = ~40V. 
 
 There are two ranges for current measurement : 
 * HIGH : Full-scale 1638mA, with a resolution of 50uA.
