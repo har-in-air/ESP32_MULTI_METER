@@ -68,7 +68,7 @@ This is an example of gated capture, which records the load current & voltage on
 
 <img src="docs/gated_capture_record.gif">
 
-## Chossing Sample Rates
+## Choosing Sample Rates
 
 Sampling at 200Hz will result in less noise and allow you to capture longer intervals. 
 However, it may not capture brief current pulses and accurate maximum/minimum values.
