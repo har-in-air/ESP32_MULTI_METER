@@ -1,6 +1,6 @@
 # ESP32_INA226_CURRENT_VOLTAGE_METER
 
-ESP32 development board with INA226 sensor used to capture and record load bus voltage
+ESP32 development board and INA226 sensor used to capture and record load bus voltage
 and load current of a Device Under Test (DUT). 
 
 <p align="center" width="100%">
@@ -34,7 +34,8 @@ The system initially boots up as a stand-alone WiFi Access Point and web server 
 
 Connect to this WiFi AP, then open the home page `http://192.168.4.1` in a browser. 
 If your OS has mDNS support, use the url `http://meter.local`.
-MacOS has built-in support for mDNS. For Windows, install Bonjour. For Ubuntu, install Avahi.
+
+MacOS has built-in support for mDNS. On Windows, install Bonjour. On Ubuntu, install Avahi.
 
 <p align="center" width="100%">
 <img src="docs/home_page.png">
@@ -42,7 +43,7 @@ MacOS has built-in support for mDNS. For Windows, install Bonjour. For Ubuntu, i
 
 Full meter functionality is available in this stand-alone mode. 
 
-It may be more convenient for the meter to connect as a station to an existing WiFi Access Point so you do not have to switch between access points just to use the meter.
+It is more convenient for the meter to connect as a station to an existing WiFi Access Point so you do not have to switch between access points.
 
 On the home page you can specify an external WiFi Access Point SSID and password. 
 Submit the WiFi credentials and restart the ESP32.
@@ -54,7 +55,7 @@ you will need a serial debug connection to the ESP32. Check the serial monitor l
 
 ## Device Under Test Example
 
-The power supply is an 18650 Li-Ion battery. The DUT is an ESP32 development board. 
+The power supply is an 18650 Li-Ion battery. The DUT is an ESP32 development board running an Internet connectivity test. 
 
 On reset, the DUT ESP32 executes the following cyclical sequence :
 1. Connects to a WiFi Internet Access Point as a station
@@ -62,7 +63,9 @@ On reset, the DUT ESP32 executes the following cyclical sequence :
 3. Enters deep sleep for 10 seconds
 4. Restarts
 
-The DUT ESP32 uses a gpio pin to set the current meter gate high on restart, and resets the gate just before going to sleep. The DUT ESP32 is active for approximately 2.5 seconds and in deep-sleep for 10 seconds.
+The DUT ESP32 is periodically active for approximately 2.5 seconds and then in deep-sleep for 10 seconds.
+
+The DUT ESP32 uses a GPIO pin to set the current meter gate high on restart, and resets the gate just before going to sleep. 
 
 This is an example of an 8-second capture @ 1000Hz, HIGH scale. The capture was manually triggered approximately half-way during the DUT ESP32 deep-sleep interval.
 
