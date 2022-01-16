@@ -5,7 +5,7 @@
 </head>
 
 <body>
-<div style="margin:auto;width:600px;">	
+<div style="align-items:center;">	
 <h1>ESP32 INA226 Current & Voltage Meter</h1>
 </div>
 		
@@ -31,36 +31,45 @@
 	</div>
 </div>	
 <p>
-<div class="capture">
+<div class="capture" >
 	<table>
 	<tr>
 	<td><label for="cfgInx">Sample Rate</label></td>
-	<td><select id="cfgInx" name="cfgInx" class="cfg-select">
+	<td>
+		<select id="cfgInx" name="cfgInx" class="cfg-select" onchange="on_sample_rate_change(this)">
 			<option value="0" "selected">1000Hz : avg=1, vadc=140us, sadc=332uS</option>
 			<option value="1" >500Hz : avg=1, vadc=140uS, sadc=1100uS</option>
 			<option value="2" >200Hz : avg=4, vadc=332uS, sadc=332uS</option>
-	</select></td><td></td><td></td>
+		</select>
+	</td>
+	<td></td>
+	<td></td>
+	<td></td>
 	</tr>
+
 	<tr>
 	<td><label for="scale">Current Range</label></td>
-	<td><select id="scale" name="scale" class="scale-select">
+	<td>
+		<select id="scale" name="scale" class="scale-select">
 			<option value="0" "selected">FS=1638mA, res=50uA</option>
 			<option value="1">FS=78mA, res=2.4uA</option>
-	</select></td><td><button style="margin-left:100px;margin-right:40px;" id="capture">Capture</button></td><td><div id="led" class="led-box">
-			<div class="led-green"></div>
-			</div></td>
-	</tr>
-	<tr>
-	<td><label for="sampleSecs">Sample Seconds</label></td>
-	<td><select id="sampleSecs" name="sampleSecs" class="sample-select">
-		<option value="1" "selected">1</option>
-		<option value="2">2</option>
-		<option value="4">4</option>
-		<option value="8">8</option>
-		<option value="16">16</option>
-		<option value="0">Gated</option>
 		</select>
-	</td><td></td><td></td>
+	</td>
+	<td><button  style="margin-left:40px;margin-right:40px;" id="capture">Capture</button></td>
+	<td><div id="led" class="led-box">
+			<div class="led-green"></div>
+		</div>
+	</td>
+	<td><button  style="margin-left:40px;"id="captureGated">Capture Gated</button></td>
+	</tr>
+
+	<tr>
+	<td>Capture Seconds</td>
+	<td><input type="number" name="captureSecs" id="captureSecs" value="1" min="1" max="16"></td>
+	<td></td>
+	<td></td>
+	<td></td>	
+
 	</tr>
 	</table>		
 </div>

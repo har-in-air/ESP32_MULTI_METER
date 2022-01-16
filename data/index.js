@@ -155,7 +155,7 @@ function on_window_load(event) {
 	new_chart();
 	init_sliders();
     init_web_socket();
-	init_capture_button();
+	init_capture_buttons();
 	}
 
 // WebSocket handling
@@ -232,20 +232,56 @@ function on_ws_message(event) {
 
 // Button handling
 
-function init_capture_button() {
-    document.getElementById('capture').addEventListener('click', on_capture_click);
+function init_capture_buttons() {
+    document.getElementById("capture").addEventListener("click", on_capture_click);
+    document.getElementById("captureGated").addEventListener("click", on_capture_gated_click);
 	}
 
 function on_capture_click(event) {
 	let cfgIndex = document.getElementById("cfgInx").value;
-	let sampleSeconds = document.getElementById("sampleSecs").value;
+	let captureSeconds = document.getElementById("captureSecs").value;
 	let scale = document.getElementById("scale").value;
-	//var nsamples = (1+ Math.random()*499).toFixed(0);
 	let jsonObj = {};
 	jsonObj["action"] = "capture";
 	jsonObj["cfgIndex"] = cfgIndex;
-	jsonObj["sampleSecs"] = sampleSeconds.toString();
+	jsonObj["captureSecs"] = captureSeconds.toString();
 	jsonObj["scale"] = scale;
     websocket.send(JSON.stringify(jsonObj));
-	document.getElementById("led").innerHTML = (sampleSeconds == 0) ? "<div class=\"led-yellow\"></div>" : "<div class=\"led-red\"></div>";
+	// set capture led to red, indicate capturing
+	document.getElementById("led").innerHTML = "<div class=\"led-red\"></div>";
 	}
+
+
+function on_capture_gated_click(event) {
+	let cfgIndex = document.getElementById("cfgInx").value;
+	let scale = document.getElementById("scale").value;
+	let jsonObj = {};
+	jsonObj["action"] = "capture";
+	jsonObj["cfgIndex"] = cfgIndex;
+	// set capture seconds to 0 for gated capture
+	jsonObj["captureSecs"] = "0"; 
+	jsonObj["scale"] = scale;
+	websocket.send(JSON.stringify(jsonObj));
+	// set capture led to yellow, indicate waiting for gate
+	document.getElementById("led").innerHTML = "<div class=\"led-yellow\"></div>";
+	}
+	
+
+function on_sample_rate_change(selectObject) {
+	let value = selectObject.value;  
+	let docobj = document.getElementById("captureSecs");
+	if (value == "0") {
+		docobj.max = "16";
+		if (docobj.value > 16) docobj.value = 16; 
+		}
+	else
+	if (value == "1") {
+		docobj.max = "32";
+		if (docobj.value > 32) docobj.value = 32; 
+		}
+	else 
+	if (value == "2") {
+		docobj.max = "80";
+		if (docobj.value > 80) docobj.value = 80; 
+		}
+  	}	

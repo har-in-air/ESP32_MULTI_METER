@@ -209,18 +209,18 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 
 			const char *szAction = json["action"];
 			const char *szCfgIndex = json["cfgIndex"];
-			const char *szSampleSeconds = json["sampleSecs"];
+			const char *szCaptureSeconds = json["captureSecs"];
 			const char *szScale = json["scale"];
 
 			ESP_LOGI(TAG,"json[\"action\"]= %s\n", szAction);
 			ESP_LOGI(TAG,"json[\"cfgIndex\"]= %s\n", szCfgIndex);
-			ESP_LOGI(TAG,"json[\"sampleSecs\"]= %s\n", szSampleSeconds);
+			ESP_LOGI(TAG,"json[\"captureSecs\"]= %s\n", szCaptureSeconds);
 			ESP_LOGI(TAG,"json[\"scale\"]= %s\n", szScale);
 
 			int cfgIndex = strtol(szCfgIndex, NULL, 10);
-			int sampleSeconds = strtol(szSampleSeconds, NULL, 10);
+			int captureSeconds = strtol(szCaptureSeconds, NULL, 10);
 			int sampleRate = 1000000/Config[cfgIndex].periodUs;
-			int numSamples = sampleSeconds*sampleRate;
+			int numSamples = captureSeconds*sampleRate;
 			int scale = strtol(szScale, NULL, 10);
 			
 			Measure.cfg = Config[cfgIndex].reg | 0x0003;

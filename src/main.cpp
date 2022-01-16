@@ -81,9 +81,9 @@ static void wifi_task(void* pVParameter) {
 	int state = ST_IDLE;
 	int bufferOffset = 0;
 	int txSamples = 0;
-	int SamplesRemaining = 0;
-	volatile int16_t* pb;
+	int remainingSamples = 0;
 	int numBytes;
+	volatile int16_t* pb;
 	int16_t msg;
 
 	while (1) {
@@ -95,7 +95,7 @@ static void wifi_task(void* pVParameter) {
 				default :
 					if (GateOpenFlag){
 						GateOpenFlag = false;
-						ESP_LOGD(TAG,"Socket msg : Tx Gate Open");
+						ESP_LOGD(TAG,"Socket msg : Capture Gate Open");
 						msg = MSG_GATE_OPEN;
 						ws.binary(ClientID, (uint8_t*)&msg, 2); 
 						}	
@@ -103,15 +103,16 @@ static void wifi_task(void* pVParameter) {
 					if (DataReadyFlag == true) {
 						DataReadyFlag = false;
 						ESP_LOGD(TAG,"Socket msg : Tx Start");
+						// start packet has 3 header fields, plus voltage and current samples
 						if (Measure.nSamples > MAX_TRANSMIT_SAMPLES) {
-							numBytes = 6 + MAX_TRANSMIT_SAMPLES*4;
+							numBytes = (3 + MAX_TRANSMIT_SAMPLES*2)*sizeof(int16_t);
 							ws.binary(ClientID, (uint8_t*)Buffer, numBytes); 
 							bufferOffset += numBytes/2;
 							txSamples += MAX_TRANSMIT_SAMPLES;
 							state = ST_TX;
 							}
 						else {
-							numBytes = 6 + Measure.nSamples*4;
+							numBytes = (3 + Measure.nSamples*2)*sizeof(int16_t);
 							ws.binary(ClientID, (uint8_t*)Buffer, numBytes); 
 							state = ST_TX_COMPLETE;
 							}
@@ -119,21 +120,24 @@ static void wifi_task(void* pVParameter) {
 				break;
 
 				case ST_TX :
+					// wait for last packet receive acknowledgement before transmitting
+					// next packet
 					if (TransmitOKFlag == true) {
 						TransmitOKFlag = false;
 						ESP_LOGD(TAG,"Socket msg : Tx ...");
-						SamplesRemaining = Measure.nSamples - txSamples;
+						remainingSamples = Measure.nSamples - txSamples;
 						pb = Buffer + bufferOffset; 
-						if (SamplesRemaining > MAX_TRANSMIT_SAMPLES) {
-							numBytes = 2 + MAX_TRANSMIT_SAMPLES*4;
+						// continuing packets have 1 header field, plus voltage and current samples
+						if (remainingSamples > MAX_TRANSMIT_SAMPLES) {
+							numBytes = (1 + MAX_TRANSMIT_SAMPLES*2)*sizeof(int16_t);
 							ws.binary(ClientID, (uint8_t*)pb, numBytes); 
 							bufferOffset += numBytes/2;
 							txSamples += MAX_TRANSMIT_SAMPLES;
 							state = ST_TX;
 							}
 						else {
-							if (SamplesRemaining > 0 ) {
-								numBytes = 2 + SamplesRemaining*4;
+							if (remainingSamples > 0 ) {
+								numBytes = (1 + remainingSamples*2)*sizeof(int16_t);
 								ws.binary(ClientID, (uint8_t*)pb, numBytes); 
 								}
 							state = ST_TX_COMPLETE;
@@ -142,6 +146,8 @@ static void wifi_task(void* pVParameter) {
 				break;
 
 				case ST_TX_COMPLETE :
+					// wait for last packet receive acknowledgement before transmitting
+					// capture end message
 					if (TransmitOKFlag == true) {
 						TransmitOKFlag = false;
 						ESP_LOGD(TAG,"Socket msg : Tx Complete");
@@ -171,6 +177,7 @@ static void capture_task(void* pvParameter)  {
 		}
 
 	ina226_reset();
+
 	// get largest malloc-able block of byte-addressable free memory
 	int32_t maxBufferBytes = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
 	ESP_LOGI(TAG, "Free memory malloc-able for sample Buffer = %d bytes", maxBufferBytes);
@@ -182,11 +189,10 @@ static void capture_task(void* pvParameter)  {
 		while (1){}
 		}
 
-	MaxSamples = (maxBufferBytes - 4)/4;
-	ESP_LOGI(TAG, "Max Buffer Samples = %d", MaxSamples);
+	MaxSamples = (maxBufferBytes - 8)/4;
+	ESP_LOGI(TAG, "Max Samples = %d", MaxSamples);
 	//nv_options_reset(Options);
 	//nv_config_reset(ConfigTbl);
-   	
 
 	while (1){
 			if (CaptureFlag == true) {

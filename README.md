@@ -3,7 +3,7 @@
 ESP32 development board with INA226 sensor used to capture and record load bus voltage
 and load current of a Device Under Test (DUT). 
 
-<p align="center">
+<p align="center" width="100%">
 <img src="docs/block.png">
 </p>
 
@@ -36,7 +36,7 @@ Connect to this WiFi AP, then open the home page `http://192.168.4.1` in a brows
 If your OS has mDNS support, use the url `http://meter.local`.
 MacOS has built-in support for mDNS. For Windows, install Bonjour. For Ubuntu, install Avahi.
 
-<p align="center">
+<p align="center" width="100%">
 <img src="docs/home_page.png">
 </p>
 
@@ -66,17 +66,17 @@ The DUT ESP32 uses a gpio pin to set the current meter gate high on restart, and
 
 This is an example of an 8-second capture @ 1000Hz, HIGH scale. The capture was manually triggered approximately half-way during the DUT ESP32 deep-sleep interval.
 
+<p align="center" width="100%">
+<img src="docs/8s_capture_record.gif">
+</p>
+
 The deep-sleep mode current is ~10mA  due to the USB-UART interface and LDO regulator on the DUT ESP32 development board. 
 
 In active mode, we can see high current pulses  (> 400mA),  corresponding to WiFi radio transmission bursts.
 
-<p align="center">
-<img src="docs/8s_capture_record.gif">
-</p>
-
 This is an example of gated capture. It records the load current & voltage only while the DUT ESP32 is active.
 
-<p align="center">
+<p align="center" width="100%">
 <img src="docs/gated_capture_record.gif">
 </p>
 
@@ -88,13 +88,13 @@ However, it may not capture brief current pulses or record accurate maximum/mini
 
 In the first gated capture display, a sample rate of 200Hz was selected for capture.
 
-<p align="center">
+<p align="center" width="100%">
 <img src="docs/capture_gated_200Hz.png">
 </p>
 
 In the second gated capture display, a sample rate of 1000Hz was selected for capture.
 
-<p align="center">
+<p align="center" width="100%">
 <img src="docs/capture_gated_1000Hz.png">
 </p>
 
