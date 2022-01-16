@@ -37,19 +37,17 @@ void ina226_write_reg(uint8_t regAddr, uint16_t data) {
 	}
 
 
-int ina226_read_reg(uint8_t regAddr, uint16_t* pdata) {
+uint16_t ina226_read_reg(uint8_t regAddr) {
 	Wire.beginTransmission(INA226_I2C_ADDR);
 	Wire.write(regAddr);
 	Wire.endTransmission(false); // restart
 	Wire.requestFrom(INA226_I2C_ADDR, 2);
 	uint8_t buf[2];
-	int cnt = 0;
-	while (Wire.available())  {
-		buf[cnt++] = Wire.read();
-		}
+	buf[0] = Wire.read();
+	buf[1] = Wire.read();
 	// msbyte, then lsbyte
-	*pdata = ((uint16_t)buf[1]) |  (((uint16_t)buf[0])<<8);
-	return cnt;
+	uint16_t res = ((uint16_t)buf[1]) |  (((uint16_t)buf[0])<<8);
+	return res;
 	}
 
 // Shunt ADC resolution is 2.5uV/lsb
@@ -82,12 +80,11 @@ void ina226_capture_oneshot(volatile MEASURE_t &measure) {
 	// measure the INA226 total conversion time for shunt and bus adcs
 	uint32_t us = tend - tstart;
 
-	uint16_t reg_mask, reg_bus, reg_shunt;
+	uint16_t reg_bus, reg_shunt;
 	// read shunt and bus ADCs
-	ina226_read_reg(REG_SHUNT, &reg_shunt); 
-	ina226_read_reg(REG_VBUS, &reg_bus); 
+	reg_shunt = ina226_read_reg(REG_SHUNT); 
+	reg_bus = ina226_read_reg(REG_VBUS); 
 	// clear alert flag
-	//ina226_read_reg(REG_MASK, &reg_mask); 
 	int16_t data_i16 = (int16_t)reg_shunt;
 	if (measure.scale == SCALE_HI) {
 		measure.iavgma = data_i16*0.05f;
@@ -131,8 +128,8 @@ void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buf
 		// pinAlert pulled up to 3v3, active low on conversion complete
 		while (digitalRead(pinAlert) == HIGH);
 		// read shunt and bus ADCs
-		ina226_read_reg(REG_SHUNT, &reg_shunt); 
-		ina226_read_reg(REG_VBUS, &reg_bus); 
+		reg_shunt = ina226_read_reg(REG_SHUNT); 
+		reg_bus = ina226_read_reg(REG_VBUS); 
 		
 		data_i16 = (int16_t)reg_shunt;
 		buffer[bufIndex] = data_i16;
@@ -205,8 +202,8 @@ void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer)
 		// pinAlert pulled up to 3v3, active low on conversion complete
 		while (digitalRead(pinAlert) == HIGH);
 		// read shunt and bus ADCs
-		ina226_read_reg(REG_SHUNT, &reg_shunt); 
-		ina226_read_reg(REG_VBUS, &reg_bus); 
+		reg_shunt = ina226_read_reg(REG_SHUNT); 
+		reg_bus = ina226_read_reg(REG_VBUS); 
 		
 		data_i16 = (int16_t)reg_shunt;
 		buffer[bufIndex] = data_i16;
@@ -253,60 +250,6 @@ void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer)
 	}
 
 
-void ina226_capture_continuous(volatile MEASURE_t &measure, volatile int16_t* buffer) {
-	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 
-	int32_t savg, bavg; // averaging accumulators
-	uint16_t reg_mask, reg_bus, reg_shunt;
-	smax = bmax = -32768;
-	smin = bmin = 32767;
-	savg = bavg = 0;
-	switch_scale(measure.scale);
-	// conversion ready -> alert pin goes low
-	ina226_write_reg(REG_MASK, 0x0400);
-	// configure for continuous bus and shunt adc conversions
-	ina226_write_reg(REG_CFG, measure.cfg);
-	uint32_t tstart = micros();
-	for (int inx = 0; inx < measure.nSamples; inx++){
-		while (digitalRead(pinAlert) == HIGH);
-		// read shunt and bus ADCs
-		ina226_read_reg(REG_SHUNT, &reg_shunt); 
-		ina226_read_reg(REG_VBUS, &reg_bus); 
-		data_i16 = (int16_t)reg_shunt;
-		buffer[2*inx] = data_i16;
-		savg += i32(data_i16);
-		if (data_i16 > smax) smax = data_i16;
-		if (data_i16 < smin) smin = data_i16;
-
-		data_i16 = (int16_t)reg_bus;
-		buffer[2*inx+1] = data_i16; 
-		bavg += i32(data_i16);
-		if (data_i16 > bmax) bmax = data_i16;
-		if (data_i16 < bmin) bmin = data_i16;
-		}
-	uint32_t us = micros() - tstart;
-	measure.sampleRate = (1000000.0f*(float)measure.nSamples)/(float)us;
-	// convert shunt adc reading to mA
-	savg = savg / measure.nSamples;
-	if (measure.scale == SCALE_HI) {
-		measure.iavgma = savg*0.05f;
-		measure.imaxma = smax*0.05f;
-		measure.iminma = smin*0.05f;
-		}
-	else {
-		measure.iavgma = savg*0.002381f;
-		measure.imaxma = smax*0.002381f;
-		measure.iminma = smin*0.002381f;
-		}	
-	// convert bus adc reading to V
-	bavg = bavg / measure.nSamples;
-	measure.vavg = bavg*0.00125f; 
-	measure.vmax = bmax*0.00125f; 
-	measure.vmin = bmin*0.00125f; 
-	// vload = vbus - vshunt
-	ESP_LOGI(TAG,"Continuous : 0x%04X %s %dHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", (int)(measure.sampleRate+0.5f), measure.vavg, measure.iavgma);
-	}
-
-
 void ina226_reset() {
 	ESP_LOGI(TAG,"INA226 system reset");
 	// system reset, bit self-clears
@@ -322,14 +265,4 @@ void ina226_test_capture() {
 		Measure.cfg = Config[inx].reg | 0x0003;
 		ina226_capture_oneshot(Measure);
 		}
-
-#if 0
-	ESP_LOGI(TAG,"Measuring triggered sample-rates");
-	for (int inx = 0; inx < NUM_CFG; inx++) {
-		Measure.cfg = Config[inx].reg | 0x0003;
-		Measure.periodUs = Config[inx].periodUs;
-		Measure.nSamples = 2000;
-		ina226_capture_triggered(Measure, Buffer);
-		}
-#endif
 	}

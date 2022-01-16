@@ -168,10 +168,9 @@ static void capture_task(void* pvParameter)  {
     ESP_LOGI(TAG, "capture_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
 	Wire.begin(pinSDA,pinSCL); 
 	Wire.setClock(1000000);
-	uint16_t val;
-	ina226_read_reg(REG_ID, &val);
-	if (val != 0x5449) {
-		ESP_LOGE(TAG,"INA226 Manufacturer ID read = 0x%04X, expected 0x5449\n", val);
+	uint16_t id = ina226_read_reg(REG_ID);
+	if (id != 0x5449) {
+		ESP_LOGE(TAG,"INA226 Manufacturer ID read = 0x%04X, expected 0x5449\n", id);
 		ESP_LOGE(TAG,"Halting...");
 		while (1){}
 		}

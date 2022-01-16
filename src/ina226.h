@@ -50,10 +50,8 @@ extern int MaxSamples;
 extern volatile bool GateOpenFlag;
 
 void	ina226_write_reg(uint8_t regAddr, uint16_t data);
-int 	ina226_read_reg(uint8_t regAddr, uint16_t* pdata);
+uint16_t ina226_read_reg(uint8_t regAddr);
 void	ina226_reset();
-void	ina226_config(int cfgIndex, bool bOneShot);
-void	ina226_capture_continuous(volatile MEASURE_t &measure, volatile int16_t* buffer);
 void 	ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buffer);
 void 	ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer);
 void	ina226_capture_oneshot(volatile MEASURE_t &measure);
