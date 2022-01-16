@@ -118,8 +118,8 @@ void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buf
 	// conversion ready -> alert pin goes low
 	ina226_write_reg(REG_MASK, 0x0400);
 	uint32_t tstart = micros();
-	// packet header indicating start packet,
-	// sampling rate and scale information
+	// packet header with start packet ID,
+	// sample period in mS, and current scale 
 	buffer[0] = MSG_TX_START;
 	buffer[1] = ((uint16_t)measure.periodUs)/1000;
 	buffer[2] = measure.scale;
@@ -147,7 +147,7 @@ void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buf
 		if (data_i16 < bmin) bmin = data_i16;
 		// break data buffer into packets with MAX_TRANSMIT_SAMPLES samples
 		if (((inx+1) % MAX_TRANSMIT_SAMPLES) == 0) {
-			// insert packet header for next socket transmission packet
+			// continued packet header ID for next socket transmission
 			buffer[bufIndex+2] = MSG_TX;
 			offset++;
 			}
@@ -187,8 +187,8 @@ void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer)
 	switch_scale(measure.scale);
 	// conversion ready -> alert pin goes low
 	ina226_write_reg(REG_MASK, 0x0400);
-	// packet header indicating start packet,
-	// sampling rate and scale information
+	// packet header with start packet ID,
+	// sample period in mS, and current scale 
 	buffer[0] = MSG_TX_START;
 	buffer[1] = ((uint16_t)measure.periodUs)/1000;
 	buffer[2] = measure.scale;
@@ -221,7 +221,7 @@ void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer)
 		if (data_i16 < bmin) bmin = data_i16;
 		// break data buffer into packets with MAX_TRANSMIT_SAMPLES samples
 		if (((numSamples+1) % MAX_TRANSMIT_SAMPLES) == 0) {
-			// insert packet header for next socket transmission packet
+			// continued packet header ID for next socket transmission
 			buffer[bufIndex+2] = MSG_TX;
 			offset++;
 			}		
