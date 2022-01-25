@@ -156,6 +156,7 @@ static void wifi_task(void* pVParameter) {
 				}
 			}	
 		}
+	vTaskDelete(NULL);		
 	}
 
 
@@ -203,6 +204,7 @@ static void capture_task(void* pvParameter)  {
 				}
 			vTaskDelay(1);
 			}
+	vTaskDelete(NULL);		
 	}
 
 
