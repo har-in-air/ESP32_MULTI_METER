@@ -169,7 +169,9 @@ static void capture_task(void* pvParameter)  {
 	if (id != 0x5449) {
 		ESP_LOGE(TAG,"INA226 Manufacturer ID read = 0x%04X, expected 0x5449\n", id);
 		ESP_LOGE(TAG,"Halting...");
-		while (1){}
+		while (1){
+			vTaskDelay(1);
+			}
 		}
 
 	ina226_reset();
@@ -182,7 +184,9 @@ static void capture_task(void* pvParameter)  {
 	if (Buffer == nullptr) {
 		ESP_LOGE(TAG, "Could not allocate sample Buffer with %d bytes", maxBufferBytes);
 		ESP_LOGE(TAG,"Halting...");
-		while (1){}
+		while (1){
+			vTaskDelay(1);
+			}
 		}
 
 	MaxSamples = (maxBufferBytes - 8)/4;
