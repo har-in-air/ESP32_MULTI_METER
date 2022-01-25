@@ -205,6 +205,9 @@ function on_ws_message(event) {
 			} 
 		// ready to receive next data packet 
 	    websocket.send("x");
+		new_chart();
+		init_sliders();
+		update_chart();
 		}
 	else 
 	if ((view.length > 1) && (view[0] == 2222)){
@@ -219,13 +222,13 @@ function on_ws_message(event) {
 			}  
 		// ready to receive next data packet 
 		websocket.send("x");
+		init_sliders();
+		update_chart();
 		}
 	else		
 	if ((view.length == 1) && (view[0] == 3333)){
 		// tx complete
-		new_chart();
 		init_sliders();
-		update_chart();
 		document.getElementById("led").innerHTML = "<div class=\"led-green\"></div>";
 		}
 	}

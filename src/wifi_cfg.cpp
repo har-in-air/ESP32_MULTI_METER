@@ -144,9 +144,9 @@ void wifi_init() {
 		ESP_LOGI(TAG,"Error starting mDNS service");
 	    }
     pServer = new AsyncWebServer(80);
-    if (pServer == NULL) {
+    if (pServer == nullptr) {
         ESP_LOGE(TAG, "Error creating AsyncWebServer!");
-        while(1);
+        ESP.restart();
         }
 	ws.onEvent(socket_event_handler);
 	pServer->addHandler(&ws);
@@ -195,8 +195,8 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
     AwsFrameInfo *info = (AwsFrameInfo*)arg;
     if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
 		if (data[0] == 'x') {
-			//ESP_LOGI(TAG, "Transmit OK Ack");
-			TransmitOKFlag = true;
+			//ESP_LOGI(TAG, "Last Packet Ack");
+			LastPacketAckFlag = true;
 			}
 		else {
 			const uint8_t size = JSON_OBJECT_SIZE(4);
@@ -229,7 +229,7 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 			Measure.periodUs = Config[cfgIndex].periodUs;
 
 			if (strcmp(szAction, "capture") == 0) {
-				CaptureFlag = true;
+				StartCaptureFlag = true;
 				}
 			}
 		}

@@ -103,7 +103,6 @@ void ina226_capture_oneshot(volatile MEASURE_t &measure) {
 	}
 
 
-
 void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buffer) {
 	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 
 	int32_t savg, bavg; // averaging accumulators
@@ -111,6 +110,7 @@ void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buf
 	smax = bmax = -32768;
 	smin = bmin = 32767;
 	savg = bavg = 0;
+	int samplesPerSecond = 1000000/measure.periodUs;
 	switch_scale(measure.scale);
 	// conversion ready -> alert pin goes low
 	ina226_write_reg(REG_MASK, 0x0400);
@@ -121,7 +121,9 @@ void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buf
 	buffer[1] = ((uint16_t)measure.periodUs)/1000;
 	buffer[2] = measure.scale;
 	int offset = 3;
-	for (int inx = 0; inx < measure.nSamples; inx++){
+	EndCaptureFlag = false;
+	int inx = 0;
+	while (inx < measure.nSamples){
 		uint32_t t1 = micros();
 		int bufIndex = offset + 2*inx;
 		ina226_write_reg(REG_CFG, measure.cfg);
@@ -142,13 +144,17 @@ void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buf
 		bavg += i32(data_i16);
 		if (data_i16 > bmax) bmax = data_i16;
 		if (data_i16 < bmin) bmin = data_i16;
-		// break data buffer into packets with MAX_TRANSMIT_SAMPLES samples
-		if (((inx+1) % MAX_TRANSMIT_SAMPLES) == 0) {
+		// break data buffer into packets with samplesPerSecond samples
+		if (((inx+1) % samplesPerSecond) == 0) {
 			// continued packet header ID for next socket transmission
 			buffer[bufIndex+2] = MSG_TX;
 			offset++;
+			TxSamples = samplesPerSecond;
+			EndCaptureFlag = (inx == (measure.nSamples-1)) ? true : false;
+			DataReadyFlag = true; // ready to transmit the last `samplesPerSecond` samples 
 			}
 		while ((micros() - t1) < measure.periodUs);
+		inx++;
 		}
 	uint32_t us = micros() - tstart;
 	measure.sampleRate = (1000000.0f*(float)measure.nSamples)/(float)us;
@@ -181,6 +187,7 @@ void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer)
 	smax = bmax = -32768;
 	smin = bmin = 32767;
 	savg = bavg = 0;
+	int samplesPerSecond = 1000000/measure.periodUs;
 	switch_scale(measure.scale);
 	// conversion ready -> alert pin goes low
 	ina226_write_reg(REG_MASK, 0x0400);
@@ -191,6 +198,7 @@ void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer)
 	buffer[2] = measure.scale;
 	int offset = 3;
 	int numSamples = 0;
+	EndCaptureFlag = false;
 	// wait for gate signal to go low
 	while (digitalRead(pinGate) == HIGH); 
 	GateOpenFlag = true;
@@ -216,16 +224,21 @@ void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer)
 		bavg += i32(data_i16);
 		if (data_i16 > bmax) bmax = data_i16;
 		if (data_i16 < bmin) bmin = data_i16;
-		// break data buffer into packets with MAX_TRANSMIT_SAMPLES samples
-		if (((numSamples+1) % MAX_TRANSMIT_SAMPLES) == 0) {
+		// break data buffer into packets with samplesPerSecond samples
+		if (((numSamples+1) % samplesPerSecond) == 0) {
 			// continued packet header ID for next socket transmission
 			buffer[bufIndex+2] = MSG_TX;
 			offset++;
+			TxSamples = samplesPerSecond;
+			DataReadyFlag = true;
 			}		
 		while ((micros() - t1) < measure.periodUs);
 		numSamples++;
 		}
 	uint32_t us = micros() - tstart;
+	TxSamples = numSamples % samplesPerSecond;
+	EndCaptureFlag = true;
+	DataReadyFlag = true;
 	measure.nSamples = numSamples;
 	measure.sampleRate = (1000000.0f*(float)numSamples)/(float)us;
 	// convert shunt adc reading to mA

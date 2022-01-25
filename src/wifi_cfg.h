@@ -7,8 +7,8 @@ extern AsyncWebSocket ws;
 
 extern uint32_t ClientID;
 extern volatile bool SocketConnectedFlag;
-extern volatile bool CaptureFlag;
-extern volatile bool TransmitOKFlag;
+extern volatile bool StartCaptureFlag;
+extern volatile bool LastPacketAckFlag;
 
 void wifi_init();
 

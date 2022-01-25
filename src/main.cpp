@@ -7,14 +7,16 @@
 #include "wifi_cfg.h"
 #include "ina226.h"
 
-const char* FwRevision = "0.90";
+const char* FwRevision = "0.95";
 static const char* TAG = "main";
 
 volatile bool DataReadyFlag = false;
 volatile bool GateOpenFlag = false;
 volatile bool SocketConnectedFlag = false;
-volatile bool CaptureFlag = false;
-volatile bool TransmitOKFlag = false;
+volatile bool StartCaptureFlag = false;
+volatile bool EndCaptureFlag = false;
+volatile bool LastPacketAckFlag = false;
+volatile int TxSamples;
 uint32_t ClientID;
 
 #define WIFI_TASK_PRIORITY 		1
@@ -38,8 +40,6 @@ static void capture_task(void* pvParameter);
 void setup() {
 	pinMode(pinAlert, INPUT); // external pullup, active low
 	pinMode(pinGate, INPUT); // external pullup, active low
-	pinMode(pinBtn1, INPUT_PULLUP);
-	pinMode(pinBtn2, INPUT_PULLUP);
 	pinMode(pinFET1, OUTPUT); // external pulldown
 	pinMode(pinFET05, OUTPUT); // external pulldown
 
@@ -80,15 +80,16 @@ static void wifi_task(void* pVParameter) {
 	wifi_init();
 	int state = ST_IDLE;
 	int bufferOffset = 0;
-	int txSamples = 0;
-	int remainingSamples = 0;
 	int numBytes;
 	volatile int16_t* pb;
 	int16_t msg;
+	uint32_t t1, t2;
+	EndCaptureFlag = false;
 
 	while (1) {
 		vTaskDelay(1);
 		ws.cleanupClients();
+		int samplesPerSecond = Measure.periodUs ? 1000000/Measure.periodUs : 0;
 		if (SocketConnectedFlag == true) { 
 			switch (state) {
 				case ST_IDLE :
@@ -102,44 +103,36 @@ static void wifi_task(void* pVParameter) {
 					else 
 					if (DataReadyFlag == true) {
 						DataReadyFlag = false;
-						ESP_LOGD(TAG,"Socket msg : Tx Start");
-						// start packet has 3 header fields, plus voltage and current samples
-						if (Measure.nSamples > MAX_TRANSMIT_SAMPLES) {
-							numBytes = (3 + MAX_TRANSMIT_SAMPLES*2)*sizeof(int16_t);
-							ws.binary(ClientID, (uint8_t*)Buffer, numBytes); 
-							bufferOffset += numBytes/2;
-							txSamples += MAX_TRANSMIT_SAMPLES;
-							state = ST_TX;
+						ESP_LOGD(TAG,"Socket msg : Tx Start");		
+						numBytes = (3 + TxSamples*2)*sizeof(int16_t);
+						t1 = micros();
+						ws.binary(ClientID, (uint8_t*)Buffer, numBytes); 
+						bufferOffset += numBytes/2; // in uint16_ts
+						if (EndCaptureFlag == true) {
+							EndCaptureFlag = false;
+							state = ST_TX_COMPLETE;
 							}
 						else {
-							numBytes = (3 + Measure.nSamples*2)*sizeof(int16_t);
-							ws.binary(ClientID, (uint8_t*)Buffer, numBytes); 
-							state = ST_TX_COMPLETE;
+							state = ST_TX;
 							}
 						}
 				break;
 
 				case ST_TX :
-					// wait for last packet receive acknowledgement before transmitting
-					// next packet
-					if (TransmitOKFlag == true) {
-						TransmitOKFlag = false;
-						ESP_LOGD(TAG,"Socket msg : Tx ...");
-						remainingSamples = Measure.nSamples - txSamples;
+					// wait for next packet ready and last packet receive acknowledgement 
+					// before transmitting next packet
+					if ((DataReadyFlag == true) && (LastPacketAckFlag == true)) {
+						LastPacketAckFlag = false;
+						DataReadyFlag = false;
+						t2 = micros();
+						ESP_LOGD(TAG,"Socket msg : %dus, Tx ...", t2-t1);
+						t1 = t2;
 						pb = Buffer + bufferOffset; 
-						// continuing packets have 1 header field, plus voltage and current samples
-						if (remainingSamples > MAX_TRANSMIT_SAMPLES) {
-							numBytes = (1 + MAX_TRANSMIT_SAMPLES*2)*sizeof(int16_t);
-							ws.binary(ClientID, (uint8_t*)pb, numBytes); 
-							bufferOffset += numBytes/2;
-							txSamples += MAX_TRANSMIT_SAMPLES;
-							state = ST_TX;
-							}
-						else {
-							if (remainingSamples > 0 ) {
-								numBytes = (1 + remainingSamples*2)*sizeof(int16_t);
-								ws.binary(ClientID, (uint8_t*)pb, numBytes); 
-								}
+						numBytes = (1 + TxSamples*2)*sizeof(int16_t);
+						ws.binary(ClientID, (uint8_t*)pb, numBytes); 
+						bufferOffset += numBytes/2; // in uint16_ts
+						if (EndCaptureFlag == true) {
+							EndCaptureFlag = false;
 							state = ST_TX_COMPLETE;
 							}
 						}						
@@ -148,13 +141,15 @@ static void wifi_task(void* pVParameter) {
 				case ST_TX_COMPLETE :
 					// wait for last packet receive acknowledgement before transmitting
 					// capture end message
-					if (TransmitOKFlag == true) {
-						TransmitOKFlag = false;
+					if (LastPacketAckFlag == true) {
+						LastPacketAckFlag = false;
+						t2 = micros();
+						ESP_LOGD(TAG,"Socket msg : %dus, Tx ...", t2-t1);
 						ESP_LOGD(TAG,"Socket msg : Tx Complete");
 						msg = MSG_TX_COMPLETE;
 						ws.binary(ClientID, (uint8_t*)&msg, 2); 
 						state = ST_IDLE;
-						txSamples = 0;
+						TxSamples = 0;
 						bufferOffset = 0;
 						}
 				break;
@@ -166,6 +161,7 @@ static void wifi_task(void* pVParameter) {
 
 static void capture_task(void* pvParameter)  {	
     ESP_LOGI(TAG, "capture_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
+	StartCaptureFlag = false;
 	Wire.begin(pinSDA,pinSCL); 
 	Wire.setClock(1000000);
 	uint16_t id = ina226_read_reg(REG_ID);
@@ -194,8 +190,8 @@ static void capture_task(void* pvParameter)  {
 	//nv_config_reset(ConfigTbl);
 
 	while (1){
-			if (CaptureFlag == true) {
-				CaptureFlag = false;
+			if (StartCaptureFlag == true) {
+				StartCaptureFlag = false;
 				if (Measure.nSamples == 0) {
 					ESP_LOGD(TAG,"Capturing gated samples using cfg = 0x%04X, scale %d\n", Measure.cfg, Measure.scale );
 					ina226_capture_gated(Measure, Buffer);
@@ -204,7 +200,6 @@ static void capture_task(void* pvParameter)  {
 					ESP_LOGD(TAG,"Capturing %d samples using cfg = 0x%04X, scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
 					ina226_capture_triggered(Measure, Buffer);
 					}
-				DataReadyFlag = true;
 				}
 			vTaskDelay(1);
 			}

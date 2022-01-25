@@ -41,13 +41,15 @@ typedef struct {
 	} CONFIG_t;
 
 #define NUM_CFG 				3
-#define MAX_TRANSMIT_SAMPLES 	8000
 
 extern volatile int16_t* Buffer;
 extern const CONFIG_t Config[];
 extern volatile MEASURE_t Measure;
 extern int MaxSamples;
 extern volatile bool GateOpenFlag;
+extern volatile bool DataReadyFlag;
+extern volatile int TxSamples;
+extern volatile bool EndCaptureFlag;
 
 void	ina226_write_reg(uint8_t regAddr, uint16_t data);
 uint16_t ina226_read_reg(uint8_t regAddr);

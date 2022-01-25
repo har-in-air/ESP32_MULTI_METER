@@ -4,8 +4,6 @@
 #define CORE_0    0
 #define CORE_1    1
 
-#define pinBtn1			0
-#define pinBtn2         4
 #define pinFET1			18  // switch in the 1.0ohm shunt
 #define pinFET05		19  // switch in the 0.05ohm shunt
 #define pinSDA          21  // I2C interface to INA226
