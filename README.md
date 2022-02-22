@@ -57,25 +57,32 @@ In this mode, the meter uses a fixed sampling configuration :
 
 The current range is automatically switched. 
 
-If the load current < 78mA, the low range (0 - 78mA) is used for higher resolution (2.4uA).
+If the load current < 78mA, the low range (0 - 78mA) is used  with 2.4uA resolution.
 
-If the load current >= 78mA, the high range reading is used (0 - 1638mA), with 50uA resolution.
+If the load current >= 78mA, the high range (0 - 1638mA) is used  with 50uA resolution.
 
 # Chart Display
 
-Three sample rate options :
+Sample rate options :
 * 2000Hz : no sample averaging, vbus ADC conversion time 204uS, shunt ADC conversion time 204uS.
 * 1000Hz : no sample averaging, vbus ADC conversion time 332uS, shunt ADC conversion time 332uS.
 * 400Hz : averaging 4 samples, vbus ADC conversion time 140uS, shunt ADC conversion time 140uS.
 
-In Chart Display mode, we need to select the current range for capture. Auto-ranging is not possible due to the high capture sampling rate.
+Current range options :
+* 0 - 78mA with 2.4uA resolution
+* 0 - 1638mA with 50uA resolution
 
-## Manual Capture
+In Chart Display mode, we need to manually select the current range. Auto-ranging is not possible due to the high sampling rate.
 
-Up to 16000 samples can be captured with a single trigger. 
-* @ 2000Hz, maximum 8 second capture
-* @ 1000Hz, maximum 16 second capture
-* @ 400Hz, maximum 40 second capture
+There are two capture options : manually triggered, and gated capture.
+
+## Manually triggered capture with selected time interval
+
+Up to 16000 samples can be captured with a single trigger. So the maximum capture interval depends on the selected sampling rate.
+
+* @ 2000Hz, 1 second - 8 second capture
+* @ 1000Hz, 1 second - 16 second capture
+* @ 400Hz, 1 second - 40 second capture
 
 ## Gated Capture 
 
@@ -83,31 +90,35 @@ Gated capture up to the maximum of 16000 samples is available. The external gate
 This gate signal can come from the Device Under Test (DUT) or other external trigger.
 
 
-## Device Under Test Example
+## Example D.U.T.
 
 The DUT is an ESP32 development board running an Internet connectivity test. 
 
 The power supply is a fully-charged 18650 Li-Ion battery. 
 
-On reset, the DUT ESP32 executes the following cyclical sequence :
+On reset, the DUT ESP32 executes the following sequence :
 1. Connects to a WiFi Internet Access Point as a station
 2. Connects to a Network Time Protocol (NTP) server to get local time
 3. Enters deep sleep for 5 seconds
 4. Restarts
 
-The DUT ESP32 is periodically active for approximately 2.5 seconds and then in deep-sleep for 5 seconds.
+The DUT ESP32 is periodically active for approximately 2.4 seconds, and in deep-sleep for 5 seconds.
 
 The DUT ESP32 uses a GPIO pin to set the meter gate signal high on restart, and resets the gate signal just before going to sleep. 
 
-This is an example of an 8-second manual capture. The capture was manually triggered approximately half-way during the DUT ESP32 deep-sleep interval.
+## Manually triggered capture
+
+This is an example of an 8-second manually triggered capture. The capture was triggered approximately half-way during the DUT ESP32 deep-sleep interval.
 
 <p align="center" width="100%">
 <img src="docs/capture_8s_manual.png">
 </p>
 
-The DUT load current when the ESP32 is in deep sleep is ~10mA. This is due to the USB-UART IC and LDO regulator on the development board. 
+We can see that the DUT load current is ~10mA when the ESP32 is in deep-sleep. This residual current is due to the USB-UART IC and LDO regulator on the DUT ESP32 development board. 
 
-In active mode, we can see high current pulses (> 450mA) corresponding to WiFi radio transmission bursts.
+When the DUT ESP32 is active, we can see high current pulses (> 450mA) corresponding to WiFi radio transmission bursts.
+
+## Gated capture
 
 This is an example of gated capture. It records the load current & voltage only while the DUT ESP32 is active.
 
@@ -115,25 +126,24 @@ This is an example of gated capture. It records the load current & voltage only 
 <img src="docs/capture_gated.png">
 </p>
 
-## Choosing Sample Rates
+# Choosing Sample Rates
 
+## Example : Sample Rate = 400Hz
 Sampling at 400Hz will result in less noise due to sample averaging. It also allows you to capture longer intervals.
 
 However, it may not capture brief current pulses or record accurate maximum/minimum values.
-
-In the first gated capture display, a sample rate of 400Hz was selected.
 
 <p align="center" width="100%">
 <img src="docs/capture_gated_400Hz.png">
 </p>
 
-In the second gated capture display, a sample rate of 2000Hz was used.
+## Example : Sample Rate = 2000Hz
 
 <p align="center" width="100%">
 <img src="docs/capture_gated_2000Hz.png">
 </p>
 
-The measurements are noisier, but it captures all of the current pulses due to WiFi transmission bursts.
+The measurements are noisier, but it captures all the current pulses due to WiFi transmission bursts.
 
 Maximum and minimum current values are more accurately captured.
 
