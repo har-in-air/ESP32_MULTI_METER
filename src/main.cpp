@@ -10,6 +10,7 @@
 const char* FwRevision = "0.95";
 static const char* TAG = "main";
 
+volatile bool MeterReadyFlag = false;
 volatile bool DataReadyFlag = false;
 volatile bool GateOpenFlag = false;
 volatile bool SocketConnectedFlag = false;
@@ -26,9 +27,10 @@ volatile MEASURE_t Measure;
 volatile int16_t* Buffer = NULL; 
 int MaxSamples;
 
-#define ST_IDLE 		1
-#define ST_TX			2
-#define ST_TX_COMPLETE	3
+#define ST_IDLE 			1
+#define ST_TX				2
+#define ST_TX_COMPLETE		3
+#define ST_METER_COMPLETE	4
 
 static void wifi_task(void* pvParameter);
 static void capture_task(void* pvParameter);
@@ -84,16 +86,26 @@ static void wifi_task(void* pVParameter) {
 	volatile int16_t* pb;
 	int16_t msg;
 	uint32_t t1, t2;
+	DataReadyFlag = false;
+	GateOpenFlag = false;
 	EndCaptureFlag = false;
+	MeterReadyFlag = false;
+	LastPacketAckFlag = false;
 
 	while (1) {
 		vTaskDelay(1);
 		ws.cleanupClients();
-		int samplesPerSecond = Measure.periodUs ? 1000000/Measure.periodUs : 0;
 		if (SocketConnectedFlag == true) { 
 			switch (state) {
 				case ST_IDLE :
 				default :
+					if (MeterReadyFlag == true) {
+						MeterReadyFlag = false;
+						numBytes = 4 * sizeof(int16_t);
+						ws.binary(ClientID, (uint8_t*)Buffer, numBytes);
+						state = ST_METER_COMPLETE; 
+						}
+					else					
 					if (GateOpenFlag){
 						GateOpenFlag = false;
 						ESP_LOGD(TAG,"Socket msg : Capture Gate Open");
@@ -148,13 +160,27 @@ static void wifi_task(void* pVParameter) {
 						ESP_LOGD(TAG,"Socket msg : Tx Complete");
 						msg = MSG_TX_COMPLETE;
 						ws.binary(ClientID, (uint8_t*)&msg, 2); 
+						DataReadyFlag = GateOpenFlag = EndCaptureFlag = MeterReadyFlag = false;
 						state = ST_IDLE;
 						TxSamples = 0;
 						bufferOffset = 0;
 						}
 				break;
+
+				case ST_METER_COMPLETE :
+				if (LastPacketAckFlag == true) {
+					LastPacketAckFlag = false;
+					DataReadyFlag = GateOpenFlag = EndCaptureFlag = MeterReadyFlag = false;
+					state = ST_IDLE;
+					}
+				break;					
 				}
 			}	
+		else {
+			// socket disconnection, reset state and flags
+			state = ST_IDLE;
+			LastPacketAckFlag = DataReadyFlag = GateOpenFlag = EndCaptureFlag = MeterReadyFlag = false;
+			}
 		}
 	vTaskDelete(NULL);		
 	}
@@ -164,7 +190,7 @@ static void capture_task(void* pvParameter)  {
     ESP_LOGI(TAG, "capture_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
 	StartCaptureFlag = false;
 	Wire.begin(pinSDA,pinSCL); 
-	Wire.setClock(1000000);
+	Wire.setClock(400000);
 	uint16_t id = ina226_read_reg(REG_ID);
 	if (id != 0x5449) {
 		ESP_LOGE(TAG,"INA226 Manufacturer ID read = 0x%04X, expected 0x5449\n", id);
@@ -191,8 +217,10 @@ static void capture_task(void* pvParameter)  {
 
 	MaxSamples = (maxBufferBytes - 8)/4;
 	ESP_LOGI(TAG, "Max Samples = %d", MaxSamples);
-	//nv_options_reset(Options);
-	//nv_config_reset(ConfigTbl);
+
+#if 0
+	ina226_test_capture();	
+#endif
 
 	while (1){
 			if (StartCaptureFlag == true) {
@@ -200,6 +228,10 @@ static void capture_task(void* pvParameter)  {
 				if (Measure.nSamples == 0) {
 					ESP_LOGD(TAG,"Capturing gated samples using cfg = 0x%04X, scale %d\n", Measure.cfg, Measure.scale );
 					ina226_capture_gated(Measure, Buffer);
+					}
+				else 
+				if (Measure.nSamples == 1) {
+					ina226_capture_oneshot(Measure, Buffer);
 					}
 				else {
 					ESP_LOGD(TAG,"Capturing %d samples using cfg = 0x%04X, scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );

@@ -5,7 +5,8 @@
 </head>
 
 <body>
-<div style="align-items:center;">	
+
+<div style="align-items:center; width:60%; margin:auto;">	
 <h1>ESP32 INA226 Current & Voltage Meter</h1>
 </div>
 		
@@ -16,12 +17,12 @@
 		</fieldset>
 	</div>
 	<div class="chrt">
-	  <canvas id="myChart"> </canvas>
+	  <canvas id="myChart" style="background-color:white;"> </canvas>
 	  <p>
       <section class="range-slider">
         <span class="rangeValues" style="text-align:center"></span>
-        <input id="slider0" value="0" min="0" max="1000" type="range" />
-        <input id="slider1" value="1000" min="0" max="1000" type="range" />
+        <input id="slider0" value="0.0" step="0.5" min="0.0" max="1000.0" type="range" />
+        <input id="slider1" value="1000.0" step="0.5" min="0.0" max="1000.0" type="range" />
       </section>
 	</div>  
 	<div class="vstats">
@@ -37,9 +38,9 @@
 	<td><label for="cfgInx">Sample Rate</label></td>
 	<td>
 		<select id="cfgInx" name="cfgInx" class="cfg-select" onchange="on_sample_rate_change(this)">
-			<option value="0" "selected">1000Hz : avg=1, vadc=140us, sadc=332uS</option>
-			<option value="1" >500Hz : avg=1, vadc=140uS, sadc=1100uS</option>
-			<option value="2" >200Hz : avg=4, vadc=332uS, sadc=332uS</option>
+			<option value="0" "selected">2000Hz : avg=1, vadc=204us, sadc=204uS</option>
+			<option value="1" >1000Hz : avg=1, vadc=332uS, sadc=332uS</option>
+			<option value="2" >400Hz : avg=4, vadc=204uS, sadc=204uS</option>
 		</select>
 	</td>
 	<td></td>
@@ -65,7 +66,7 @@
 
 	<tr>
 	<td>Capture Seconds</td>
-	<td><input type="number" name="captureSecs" id="captureSecs" value="1" min="1" max="16"></td>
+	<td><input type="number" name="captureSecs" id="captureSecs" value="1" min="1" max="8"></td>
 	<td></td>
 	<td></td>
 	<td></td>	
@@ -77,6 +78,9 @@
 </body>
 </html>
 
-<script src="chart.js"></script>
-<script src="capture.js"></script>
+<!-- chart.min.js v3.7.0 -->
+<script src="chart.min.js"></script>
+<!-- chartjs-plugin-streaming.min.js v2.0.0 -->
+<script src="chartjs-plugin-streaming.min.js"></script>
+<script src="capture_chart.js"></script>
 

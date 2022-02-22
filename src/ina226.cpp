@@ -9,12 +9,10 @@
 static const char* TAG = "ina226";
 
 const CONFIG_t Config[NUM_CFG] = {
-	{ 0x4000 | (0 << 8) | (1 << 6) | (2 << 3), // 1, 140uS, 332uS
-	  1000UL },
-	{ 0x4000 | (0 << 8) | (1 << 6) | (4 << 3), // 1, 140uS, 1100uS
-	  2000UL },
-	{ 0x4000 | (1 << 8) | (2 << 6) | (2 << 3), // 4, 332uS, 332uS
-	  5000UL }
+	{ 0x4000 | (0 << 8) | (1 << 6) | (1 << 3), 500}, // avg 1, v 204uS, s 204uS, period 500uS
+	{ 0x4000 | (0 << 8) | (2 << 6) | (2 << 3), 1000}, // avg 1, v 332uS, s 332uS, period 1000uS
+	{ 0x4000 | (1 << 8) | (1 << 6) | (1 << 3), 2500},  // avg 4, v 204uS, s 204uS, period 2500uS
+	{ 0x4000 | (1 << 8) | (3 << 6) | (3 << 3), 10000}  // avg 4, v 588uS, s 588uS, period 10mS
 	};
 
 
@@ -67,38 +65,53 @@ uint16_t ina226_read_reg(uint8_t regAddr) {
 // Bus ADC resolution is 1.25mV/lsb 
 // Full scale = (32767 * 1.25) mV = 40.95875V
 
-void ina226_capture_oneshot(volatile MEASURE_t &measure) {
-	switch_scale(measure.scale);
+void ina226_capture_oneshot(volatile MEASURE_t &measure, volatile int16_t* buffer) {
+	switch_scale(SCALE_LO);
 	// conversion ready -> alert pin goes low
 	ina226_write_reg(REG_MASK, 0x0400);
 	// configure for one-shot bus and shunt adc conversion
-	ina226_write_reg(REG_CFG, measure.cfg);
+	buffer[0] = MSG_TX_METER;
+	buffer[1] = SCALE_LO;
+	// configure for one-shot bus and shunt adc conversion
+	ina226_write_reg(REG_CFG, measure.cfg | 0x0003);
 	uint32_t tstart = micros();
 	// pinAlert pulled up to 3v3, active low on conversion complete
 	while (digitalRead(pinAlert) == HIGH);
+	//ina226_write_reg(REG_CFG, measure.cfg | 0x0003);
+	//while (digitalRead(pinAlert) == HIGH);
 	uint32_t tend = micros();
 	// measure the INA226 total conversion time for shunt and bus adcs
 	uint32_t us = tend - tstart;
 
 	uint16_t reg_bus, reg_shunt;
 	// read shunt and bus ADCs
-	reg_shunt = ina226_read_reg(REG_SHUNT); 
+	reg_shunt = ina226_read_reg(REG_SHUNT);
 	reg_bus = ina226_read_reg(REG_VBUS); 
-	// clear alert flag
-	int16_t data_i16 = (int16_t)reg_shunt;
-	if (measure.scale == SCALE_HI) {
-		measure.iavgma = data_i16*0.05f;
+	int16_t shunt_i16 = (int16_t)reg_shunt;
+	measure.iavgma = shunt_i16*0.002381f;
+	measure.scale = SCALE_LO;
+	if (measure.iavgma > 78.0f) {
+		switch_scale(SCALE_HI);
+		buffer[1] = SCALE_HI;
+		ina226_write_reg(REG_CFG, measure.cfg | 0x0003);
+		// pinAlert pulled up to 3v3, active low on conversion complete
+		while (digitalRead(pinAlert) == HIGH);
+		reg_shunt = ina226_read_reg(REG_SHUNT);
+		shunt_i16 = (int16_t)reg_shunt;
+		reg_bus = ina226_read_reg(REG_VBUS); 
+		measure.iavgma = shunt_i16*0.05f;
+		measure.scale = SCALE_HI;
 		}
-	else {
-		measure.iavgma = data_i16*0.002381f;
-		}	
+
+	buffer[2] = shunt_i16;
+	buffer[3] = (int16_t)reg_bus;
 	measure.iminma = measure.iavgma;
 	measure.imaxma = measure.iavgma;
-
 	measure.vavg = reg_bus*0.00125f; 
 	measure.vmax = measure.vavg;
 	measure.vmin = measure.vavg;
 	measure.sampleRate = 1000000.0f/(float)us;
+	MeterReadyFlag = true;
 	ESP_LOGI(TAG,"OneShot : 0x%04X %s %dus %dHz %.1fV %.3fmA\n", measure.cfg, measure.scale == SCALE_LO ? "LO" : "HI", us, (int)(measure.sampleRate+0.5f), measure.vavg, measure.iavgma);
 	}
 
@@ -110,15 +123,17 @@ void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buf
 	smax = bmax = -32768;
 	smin = bmin = 32767;
 	savg = bavg = 0;
-	int samplesPerSecond = 1000000/measure.periodUs;
+	int samplesPerSecond = 1000000/(int)measure.periodUs;
 	switch_scale(measure.scale);
 	// conversion ready -> alert pin goes low
 	ina226_write_reg(REG_MASK, 0x0400);
+	// continuous bus and shunt conversion
+	ina226_write_reg(REG_CFG, measure.cfg | 0x0007);
 	uint32_t tstart = micros();
 	// packet header with start packet ID,
 	// sample period in mS, and current scale 
 	buffer[0] = MSG_TX_START;
-	buffer[1] = ((uint16_t)measure.periodUs)/1000;
+	buffer[1] = (int16_t)measure.periodUs;
 	buffer[2] = measure.scale;
 	int offset = 3;
 	EndCaptureFlag = false;
@@ -126,7 +141,6 @@ void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buf
 	while (inx < measure.nSamples){
 		uint32_t t1 = micros();
 		int bufIndex = offset + 2*inx;
-		ina226_write_reg(REG_CFG, measure.cfg);
 		// pinAlert pulled up to 3v3, active low on conversion complete
 		while (digitalRead(pinAlert) == HIGH);
 		// read shunt and bus ADCs
@@ -180,6 +194,7 @@ void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buf
 	}
 
 
+
 void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer) {
 	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 
 	int32_t savg, bavg; // averaging accumulators
@@ -187,26 +202,27 @@ void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer)
 	smax = bmax = -32768;
 	smin = bmin = 32767;
 	savg = bavg = 0;
-	int samplesPerSecond = 1000000/measure.periodUs;
+	int samplesPerSecond = 1000000/(int)measure.periodUs;
 	switch_scale(measure.scale);
 	// conversion ready -> alert pin goes low
 	ina226_write_reg(REG_MASK, 0x0400);
+	// continuous bus and shunt conversion
+	ina226_write_reg(REG_CFG, measure.cfg | 0x0007);
 	// packet header with start packet ID,
 	// sample period in mS, and current scale 
 	buffer[0] = MSG_TX_START;
-	buffer[1] = ((uint16_t)measure.periodUs)/1000;
+	buffer[1] = (int16_t)measure.periodUs;
 	buffer[2] = measure.scale;
 	int offset = 3;
 	int numSamples = 0;
 	EndCaptureFlag = false;
-	// wait for gate signal to go low
+	// gate signal is active low
 	while (digitalRead(pinGate) == HIGH); 
 	GateOpenFlag = true;
 	uint32_t tstart = micros();
 	while((digitalRead(pinGate) == LOW) && (numSamples < MaxSamples)) {
 		uint32_t t1 = micros();
 		int bufIndex = offset + 2*numSamples;
-		ina226_write_reg(REG_CFG, measure.cfg);
 		// pinAlert pulled up to 3v3, active low on conversion complete
 		while (digitalRead(pinAlert) == HIGH);
 		// read shunt and bus ADCs
@@ -273,9 +289,9 @@ void ina226_reset() {
 
 void ina226_test_capture() {
 	ESP_LOGI(TAG,"Measuring one-shot sample times");
-	Measure.scale = SCALE_LO;
+	Measure.scale = SCALE_HI;
 	for (int inx = 0; inx < NUM_CFG; inx++) {
-		Measure.cfg = Config[inx].reg | 0x0003;
-		ina226_capture_oneshot(Measure);
+		Measure.cfg = Config[inx].reg;
+		ina226_capture_oneshot(Measure, Buffer);
 		}
 	}

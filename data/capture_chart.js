@@ -3,8 +3,8 @@
 let c = document.getElementById("myChart");
 let Ctxt = document.getElementById("myChart").getContext("2d");
 
-let timeMs = 0;
-let periodMs = 1;
+let timeMs = 0.0;
+let periodMs = 0.5;
 let iScale = 0.05;
 let vScale = 0.00125;
 let Time = [];
@@ -12,7 +12,7 @@ let Data_mA = [];
 let Data_V = [];
 
 for(let inx = 0; inx < 1000; inx++){
-	Time.push(inx);
+	Time.push(periodMs*inx);
 	Data_mA.push(0);
 	Data_V.push(0);
 	}  
@@ -76,9 +76,9 @@ function init_sliders() {
 		for (let j = 0; j < sliders.length; j++) {
 			if (sliders[j].type === "range") {
 				sliders[j].oninput = update_chart;
-				sliders[j].value = (j == 0 ? 0 : Time.length);
-				sliders[j].min = 0;
-				sliders[j].max = Time.length;
+				sliders[j].value = (j == 0 ? 0.0 : Time.length*periodMs);
+				sliders[j].min = 0.0;
+				sliders[j].max = parseFloat(Time.length)*periodMs;
 				// Manually trigger event first time to display values
 				sliders[j].oninput();
 				}
@@ -102,9 +102,12 @@ function update_chart() {
 	let data_mA_slice = [];
 	let data_V_slice = [];
 
-	time_slice = JSON.parse(JSON.stringify(Time)).slice(min, max);
-	data_mA_slice = JSON.parse(JSON.stringify(Data_mA)).slice(min, max);
-	data_V_slice = JSON.parse(JSON.stringify(Data_V)).slice(min, max);
+	let min_index = min/periodMs;
+	let max_index = max/periodMs;
+
+	time_slice = JSON.parse(JSON.stringify(Time)).slice(min_index, max_index);
+	data_mA_slice = JSON.parse(JSON.stringify(Data_mA)).slice(min_index, max_index);
+	data_V_slice = JSON.parse(JSON.stringify(Data_V)).slice(min_index, max_index);
 	
 	ChartInst.data.labels = time_slice;
 	ChartInst.data.datasets[0].data = data_mA_slice;
@@ -131,7 +134,7 @@ function update_chart() {
 	vAvg = vAvg/time_slice.length;
 	
 	let displayElement = document.getElementsByClassName("rangeValues")[0];
-	displayElement.innerHTML = "[" + min*periodMs + "," + max*periodMs + "]mS";
+	displayElement.innerHTML = "[" + min + "," + max + "]mS";
 	document.getElementById("istats").innerHTML = 
 		"avg : " + iAvg.toFixed(3) + "mA<br>" + 
 		"min : " + iMin.toFixed(3) + "mA<br>" + 
@@ -157,6 +160,12 @@ function on_window_load(event) {
     init_web_socket();
 	init_capture_buttons();
 	}
+
+window.onbeforeunload = function() {
+	websocket.onclose = function () {}; // disable onclose handler first
+	websocket.close();
+	}
+	
 
 // WebSocket handling
 
@@ -187,10 +196,10 @@ function on_ws_message(event) {
 	else 
 	if ((view.length > 3) && (view[0] == 1111)){
 		// new capture tx start
-		periodMs = view[1];
+		periodMs = parseFloat(view[1])/1000.0;
 		iScale = view[2] == 0 ? 0.05 : 0.002381;
 		ChartInst.destroy();
-		timeMs = 0;
+		timeMs = 0.0;
 		Time = [];
 		Data_mA = [];
 		Data_V = [];
@@ -229,6 +238,7 @@ function on_ws_message(event) {
 	if ((view.length == 1) && (view[0] == 3333)){
 		// tx complete
 		init_sliders();
+		//update_chart();
 		document.getElementById("led").innerHTML = "<div class=\"led-green\"></div>";
 		}
 	}
@@ -274,17 +284,17 @@ function on_sample_rate_change(selectObject) {
 	let value = selectObject.value;  
 	let docobj = document.getElementById("captureSecs");
 	if (value == "0") {
-		docobj.max = "16";
-		if (docobj.value > 16) docobj.value = 16; 
+		docobj.max = "8";
+		if (docobj.value > 8) docobj.value = 8; 
 		}
 	else
 	if (value == "1") {
-		docobj.max = "32";
-		if (docobj.value > 32) docobj.value = 32; 
+		docobj.max = "16";
+		if (docobj.value > 16) docobj.value = 16; 
 		}
 	else 
 	if (value == "2") {
-		docobj.max = "80";
-		if (docobj.value > 80) docobj.value = 80; 
+		docobj.max = "40";
+		if (docobj.value > 40) docobj.value = 40; 
 		}
   	}	

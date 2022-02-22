@@ -18,6 +18,7 @@
 #define MSG_TX_START	1111
 #define MSG_TX			2222
 #define MSG_TX_COMPLETE	3333
+#define MSG_TX_METER	5678
 
 typedef struct {
 	// input
@@ -40,7 +41,7 @@ typedef struct {
 	uint32_t periodUs;
 	} CONFIG_t;
 
-#define NUM_CFG 				3
+#define NUM_CFG		4
 
 extern volatile int16_t* Buffer;
 extern const CONFIG_t Config[];
@@ -50,12 +51,14 @@ extern volatile bool GateOpenFlag;
 extern volatile bool DataReadyFlag;
 extern volatile int TxSamples;
 extern volatile bool EndCaptureFlag;
+extern volatile bool MeterReadyFlag;
 
 void	ina226_write_reg(uint8_t regAddr, uint16_t data);
 uint16_t ina226_read_reg(uint8_t regAddr);
 void	ina226_reset();
 void 	ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buffer);
 void 	ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer);
-void	ina226_capture_oneshot(volatile MEASURE_t &measure);
+void	ina226_capture_oneshot(volatile MEASURE_t &measure, volatile int16_t* buffer);
+void	ina226_test_capture();
 
 #endif
