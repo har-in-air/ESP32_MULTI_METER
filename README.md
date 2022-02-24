@@ -74,6 +74,8 @@ Current range options :
 
 In Chart Display mode, we need to manually select the current range. Auto-ranging is not possible due to the high sampling rate.
 
+Click on the legends `ma` and `V` above the plot to toggle the display of the corresponding data.
+
 There are two capture options : manually triggered, and gated capture.
 
 ## Manually triggered capture with selected time interval
@@ -164,7 +166,7 @@ Maximum and minimum current values are more accurately captured.
 * Any ESP32 development board with on-board USB-UART.
 * INA226 current sensor.
 * A pi-filter network + low-noise MIC5205 LDO voltage regulator provides the power supply for the INA226.
-* IRF7831 N-chan mosfet (Rds = 4 milli-Ohms),  used to switch shunt resistors for current measurements.
+* IRF7831 N-chan mosfets (Rds = 4 milli-Ohms),  used to switch shunt resistors for current measurements.
 * PC817 opto-coupler for gated measurement.
 * 0.05ohm 1% shunt resistor for HIGH current scale.
 * 1.0 ohm 1% shunt resistor for LOW current scale.
@@ -173,4 +175,5 @@ Maximum and minimum current values are more accurately captured.
 # Credits
 * [Range switching with FET switches](https://www.youtube.com/watch?v=xSEYPP5Xsi0)
 * [Javascript scrolling chart](https://stackoverflow.com/questions/35854244/how-can-i-create-a-horizontal-scrolling-chart-js-line-chart-with-a-locked-y-axis)
+
 

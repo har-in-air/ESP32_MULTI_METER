@@ -30,6 +30,7 @@ function new_chart() {
 			backgroundColor: "rgb(209, 20, 61)",
 			borderColor: "rgb(209, 20, 61)",
 			data: Data_mA,
+			cubicInterpolationMode: 'monotone', // maxima/minima stay at sample points
 			},
 			{
 			label: 'V',
@@ -37,6 +38,7 @@ function new_chart() {
 			backgroundColor: "rgb(34, 73, 228)",
 			borderColor: "rgb(34, 73, 228)",
 			data: Data_V,        
+			cubicInterpolationMode: 'monotone',
 			}],
 		},
 	options: {
