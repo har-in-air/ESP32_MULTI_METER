@@ -63,6 +63,8 @@ If the load current >= 78mA, the high range (0 - 1638mA) is used  with 50uA reso
 
 # Chart Display
 
+There are two capture options : manually triggered with a selected capture interval, and gated capture.
+
 Sample rate options :
 * 2000Hz : no sample averaging, vbus ADC conversion time 204uS, shunt ADC conversion time 204uS.
 * 1000Hz : no sample averaging, vbus ADC conversion time 332uS, shunt ADC conversion time 332uS.
@@ -76,7 +78,8 @@ In Chart Display mode, we need to manually select the current range. Auto-rangin
 
 Click on the legends `ma` and `V` above the plot to toggle the display of the corresponding data.
 
-There are two capture options : manually triggered, and gated capture.
+Use the scroll bar sliders to display a subset of the captured data.
+
 
 ## Manually triggered capture with selected time interval
 
