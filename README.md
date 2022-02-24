@@ -85,14 +85,18 @@ Use the scroll bar sliders to display a subset of the captured data.
 
 Up to 16000 samples can be captured with a single trigger. So the maximum capture interval depends on the selected sampling rate.
 
-* @ 2000Hz, 1 second - 8 second capture
-* @ 1000Hz, 1 second - 16 second capture
-* @ 400Hz, 1 second - 40 second capture
+* max 8 seconds capture @ 2000Hz
+* max 16 seconds capture @ 1000Hz
+* max 40 seconds capture @ 400Hz
 
 ## Gated Capture 
 
-Gated capture up to the maximum of 16000 samples is available. The external gate signal is input via an opto-isolator. 
-This gate signal can come from the Device Under Test (DUT) or other external trigger.
+The external gate signal is input via an opto-isolator. 
+This gate signal can come from the Device Under Test (DUT) or other external trigger. 
+
+Once triggered, capture will start when the gate input goes high.
+
+Capture will end when the gate input goes low, or 16000 samples have been captured.
 
 
 ## Example D.U.T.
