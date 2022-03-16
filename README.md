@@ -3,7 +3,7 @@
 ESP32 development board used to implement webpage -based multi-meter with following functions :
 
 * INA226 sensor capture and display load bus voltage and load current of a Device Under Test (DUT) in meter mode or chart recorder mode
-* [Frequency counter with range 1Hz to 40MHz and 1Hz resolution](https://blog.eletrogate.com/esp32-frequencimetro-de-precisao)
+* [Frequency counter with range 1Hz to 40MHz and 1Hz resolution](https://blog.eletrogate.com/esp32-frequencimetro-de-precisao), and independent oscillator (signal generator).
 
 ## Circuit Schematic
 
@@ -165,7 +165,7 @@ The measurements are noisier, but it captures all the current pulses due to WiFi
 
 Maximum and minimum current values are more accurately captured.
 
-# Frequency Counter
+# Frequency Counter & Oscillator
 
 <img src="docs/freq_counter.png">
 
