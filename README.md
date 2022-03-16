@@ -1,23 +1,13 @@
-# ESP32_INA226_CURRENT_VOLTAGE_METER
+# ESP32 MULTI-METER
 
-ESP32 development board and INA226 sensor used to capture and display load bus voltage
-and load current of a Device Under Test (DUT). 
+ESP32 development board used to implement webpage -based multi-meter with following functions :
 
-<p align="center" width="100%">
-<img src="docs/block.png">
-</p>
+* INA226 sensor capture and display load bus voltage and load current of a Device Under Test (DUT) in meter mode or chart recorder mode
+* [Frequency counter with range 1Hz to 40MHz and 1Hz resolution](https://blog.eletrogate.com/esp32-frequencimetro-de-precisao)
 
-Full-scale bus voltage = ~40V. 
+## Circuit Schematic
 
-There are two ranges for current measurement : 
-* HIGH : Full-scale 1638mA, with a resolution of 50uA.
-* LOW : Full-scale 78mA, with a resolution of 2.4uA.
-
-Meter configuration, capture and display functions are available via a web page. 
-
-There are two display modes :
-* Meter display with current and voltage readings updated every second
-* Scrollable chart display with manually triggered or gated capture
+[PDF Schematic](docs/esp32_meter_schematic.pdf)
 
 ## Configuration
 
@@ -44,11 +34,30 @@ The web page is at `http://meter.local` as before.
 If you do not have OS mDNS support, and you still want to use the meter in station mode, you will need a serial debug connection to the ESP32. 
 Check the serial monitor log on reboot to get the station IP address assigned to the meter by the external WiFi Access Point. 
 
-# Meter Display
+# Current & Voltage Display
+
+<p align="center" width="100%">
+<img src="docs/block.png">
+</p>
+
+Full-scale bus voltage = ~40V. 
+
+There are two ranges for current measurement : 
+* HIGH : Full-scale 1638mA, with a resolution of 50uA.
+* LOW : Full-scale 78mA, with a resolution of 2.4uA.
+
+Meter configuration, capture and display functions are available via a web page. 
+
+There are two display modes :
+* Meter display with current and voltage readings updated every second
+* Scrollable chart display with manually triggered or gated capture
+
+
+## Current & Voltage Meter
 
 DUT current and voltage are updated every second.
 
-<img src="docs/meter.png">
+<img src="docs/cv_meter.png">
 
 In this mode, the meter uses a fixed sampling configuration : 
 * vbus ADC conversion time 1.1mS
@@ -61,7 +70,7 @@ If the load current < 78mA, the low range (0 - 78mA) is used  with 2.4uA resolut
 
 If the load current >= 78mA, the high range (0 - 1638mA) is used  with 50uA resolution.
 
-# Chart Display
+## Current & Voltage Chart
 
 There are two capture options : manually triggered with a selected capture interval, and gated capture.
 
@@ -156,6 +165,14 @@ The measurements are noisier, but it captures all the current pulses due to WiFi
 
 Maximum and minimum current values are more accurately captured.
 
+# Frequency Counter
+
+<img src="docs/freq_counter.png">
+
+* 3.3V TTL level input signal
+* 1Hz to 40MHz range with 1Hz resolution
+* Connect oscillator output signal to frequency counter input for counter verification
+
 # Build Environment
 * Ubuntu 20.04 LTS amdx64
 * Visual Studio Code with PlatformIO plugin using Arduino framework targeting `esp32dev` board. 
@@ -168,7 +185,6 @@ Maximum and minimum current values are more accurately captured.
 
 # Hardware 
 
-[Circuit Schematic](docs/esp32_ina226_schematic.pdf)
 
 * Any ESP32 development board with on-board USB-UART.
 * INA226 current sensor.
@@ -178,9 +194,12 @@ Maximum and minimum current values are more accurately captured.
 * 0.05ohm 1% shunt resistor for HIGH current scale.
 * 1.0 ohm 1% shunt resistor for LOW current scale.
 * SS56 schottky diode, protects the 1.0 ohm shunt resistor when the LOW current scale is selected.
+* Frequency input signal (3.3V TTL level) on gpio 34.
+* Oscillator output signal on gpio 33. 
 
 # Credits
 * [Range switching with FET switches](https://www.youtube.com/watch?v=xSEYPP5Xsi0)
 * [Javascript scrolling chart](https://stackoverflow.com/questions/35854244/how-can-i-create-a-horizontal-scrolling-chart-js-line-chart-with-a-locked-y-axis)
+* [Frequency Counter](https://blog.eletrogate.com/esp32-frequencimetro-de-precisao)
 
 
