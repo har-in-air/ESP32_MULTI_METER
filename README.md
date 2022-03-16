@@ -62,7 +62,7 @@ DUT current and voltage are updated every second.
 In this mode, the meter uses a fixed sampling configuration : 
 * vbus ADC conversion time 1.1mS
 * shunt ADC conversion time 1.1mS
-* averaging 4 samples 
+* averages 128 samples for every meter reading 
 
 The current range is automatically switched. 
 
