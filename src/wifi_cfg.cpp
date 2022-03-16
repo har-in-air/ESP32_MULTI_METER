@@ -16,7 +16,7 @@ static const char* TAG = "wifi_cfg";
 extern const char* FwRevision;
 
 // stand-alone WiFi Access Point SSID (no password)
-const char* szAPSSID = "ESP32_INA226";
+const char* szAPSSID = "ESP32_METER";
 
 AsyncWebServer* pServer = NULL;
 AsyncWebSocket ws("/ws");

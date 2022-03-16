@@ -11,7 +11,7 @@ ESP32 development board used to implement webpage -based multi-meter with follow
 
 ## Configuration
 
-If not configured, the meter boots up as a stand-alone WiFi Access Point (SSID `ESP32_INA226`, no password required) and web server.
+If not configured, the meter boots up as a stand-alone WiFi Access Point (SSID `ESP32_METER`, no password required) and web server.
 
 Connect to this WiFi Access Point, then open the home page `http://192.168.4.1` in a browser. 
 If your OS has mDNS support, use the url `http://meter.local`.
