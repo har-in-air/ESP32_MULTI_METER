@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<title>ESP32 INA226 Current & Voltage Meter</title>
+<title>ESP32 Multi-Meter</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta charset="UTF-8">
 <link rel="stylesheet" type="text/css" href="style.css">
@@ -9,7 +9,7 @@
 <body>
 
 <div style="align-items:center;">	
-<h1>ESP32 INA226 Current & Voltage Meter</h1>
+<h1>ESP32 Multi-Meter</h1>
 </div>
 
 <p>
@@ -18,20 +18,24 @@
 	<span>Firmware Revision : </span><span id="fwRev">%FW_REV%</span>
 </div>
 
+<p>
+	<div style="text-align:center;">
+		<a href="/cv_meter"><button style="width:250px;">Current & Voltage Meter</button></a>
+	</div>
 </p>
 
 <div style="text-align:center;">
-	<a href="/chart"><button style="width:250px;">Chart</button></a>
+	<a href="/cv_chart"><button style="width:250px;">Current & Voltage Chart</button></a>
 </div>
 
-<p>
 
+<p>
 <div style="text-align:center;">
-	<a href="/meter"><button style="width:250px;">Meter</button></a>
+	<a href="/freq_counter"><button style="width:250px;">Frequency Counter</button></a>
 </div>
 
 <p>
-	
+		
 <div class="wifi">
 <fieldset><legend>WiFi Access Point Credentials</legend>
 <form action="/get">

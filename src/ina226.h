@@ -18,23 +18,8 @@
 #define MSG_TX_START	1111
 #define MSG_TX			2222
 #define MSG_TX_COMPLETE	3333
-#define MSG_TX_METER	5678
+#define MSG_TX_CV_METER	4444
 
-typedef struct {
-	// input
-	uint16_t cfg;
-	int   scale;
-	int   nSamples;
-	uint32_t periodUs;
-	// output
-	float sampleRate; // Hz
-	float vavg; // volts
-	float vmax;
-	float vmin;
-	float iavgma; // mA
-	float imaxma;
-	float iminma;
-} MEASURE_t;
 
 typedef struct {
 	uint16_t reg;
@@ -43,9 +28,7 @@ typedef struct {
 
 #define NUM_CFG		4
 
-extern volatile int16_t* Buffer;
 extern const CONFIG_t Config[];
-extern volatile MEASURE_t Measure;
 extern int MaxSamples;
 extern volatile bool GateOpenFlag;
 extern volatile bool DataReadyFlag;

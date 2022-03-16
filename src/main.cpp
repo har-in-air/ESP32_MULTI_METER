@@ -6,22 +6,18 @@
 #include "nv_data.h"
 #include "wifi_cfg.h"
 #include "ina226.h"
+#include "freq_counter.h"
 
-const char* FwRevision = "0.95";
+const char* FwRevision = "0.96";
 static const char* TAG = "main";
 
-volatile bool MeterReadyFlag = false;
-volatile bool DataReadyFlag = false;
-volatile bool GateOpenFlag = false;
-volatile bool SocketConnectedFlag = false;
-volatile bool StartCaptureFlag = false;
-volatile bool EndCaptureFlag = false;
-volatile bool LastPacketAckFlag = false;
 volatile int TxSamples;
+volatile bool SocketConnectedFlag = false;
 uint32_t ClientID;
 
-#define WIFI_TASK_PRIORITY 		1
-#define CAPTURE_TASK_PRIORITY 	(configMAX_PRIORITIES-1)
+#define WIFI_TASK_PRIORITY 				1
+#define CURRENT_VOLTAGE_TASK_PRIORITY 	(configMAX_PRIORITIES-1)
+#define FREQUENCY_TASK_PRIORITY 		(configMAX_PRIORITIES-2)
 
 volatile MEASURE_t Measure;
 volatile int16_t* Buffer = NULL; 
@@ -31,9 +27,11 @@ int MaxSamples;
 #define ST_TX				2
 #define ST_TX_COMPLETE		3
 #define ST_METER_COMPLETE	4
+#define ST_FREQ_COMPLETE	5
 
 static void wifi_task(void* pvParameter);
-static void capture_task(void* pvParameter);
+static void current_voltage_task(void* pvParameter);
+static void reset_flags();
 
 // create the desired tasks, and then delete arduino created loopTask that calls setup() and loop(). 
 // Core 0 : wifi task with web server and websocket communication, and low level esp-idf wifi code
@@ -44,6 +42,8 @@ void setup() {
 	pinMode(pinGate, INPUT); // external pullup, active low
 	pinMode(pinFET1, OUTPUT); // external pulldown
 	pinMode(pinFET05, OUTPUT); // external pulldown
+	pinMode(pinLED, OUTPUT); 
+	digitalWrite(pinLED, LOW);
 
 	Serial.begin(115200);
 	ESP_LOGI(TAG,"ESP32_INA226 v%s compiled on %s at %s\n\n", FwRevision, __DATE__, __TIME__);
@@ -52,10 +52,14 @@ void setup() {
 
 	nv_options_load(Options);
 
+	Measure.mode = MODE_CURRENT_VOLTAGE;
+
 	// web server and web socket connection handler on core 0 along with low level wifi actions (ESP-IDF code)
     xTaskCreatePinnedToCore(&wifi_task, "wifi_task", 4096, NULL, WIFI_TASK_PRIORITY, NULL, CORE_0);
-    // capture task on core 1, don't want i2c capture to be pre-empted as far as possible to maintain sampling rate. 
-	xTaskCreatePinnedToCore(&capture_task, "capture_task", 4096, NULL, CAPTURE_TASK_PRIORITY, NULL, CORE_1);
+    // frequency_task on core 1, lower priority than cv capture task 
+	xTaskCreatePinnedToCore(&frequency_task, "freq_task", 4096, NULL, FREQUENCY_TASK_PRIORITY, NULL, CORE_1);
+    // current_voltage_task on core 1, don't want i2c capture to be pre-empted as far as possible to maintain sampling rate. 
+	xTaskCreatePinnedToCore(&current_voltage_task, "cv_task", 4096, NULL, CURRENT_VOLTAGE_TASK_PRIORITY, NULL, CORE_1);
 
 	// destroy loopTask which called setup() from arduino:app_main()
     vTaskDelete(NULL);
@@ -66,6 +70,14 @@ void setup() {
 void loop(){
 	}
 
+void reset_flags() {			
+	DataReadyFlag = false;
+	GateOpenFlag = false;
+	EndCaptureFlag = false;
+	MeterReadyFlag = false;
+	FreqReadyFlag = false;
+	LastPacketAckFlag = false;
+	}
 
 static void wifi_task(void* pVParameter) {
     ESP_LOGD(TAG, "wifi_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
@@ -86,21 +98,25 @@ static void wifi_task(void* pVParameter) {
 	volatile int16_t* pb;
 	int16_t msg;
 	uint32_t t1, t2;
-	DataReadyFlag = false;
-	GateOpenFlag = false;
-	EndCaptureFlag = false;
-	MeterReadyFlag = false;
-	LastPacketAckFlag = false;
+	reset_flags();
 
 	while (1) {
 		vTaskDelay(1);
 		ws.cleanupClients();
 		if (SocketConnectedFlag == true) { 
-			switch (state) {
-				case ST_IDLE :
+			switch (Measure.mode) {
 				default :
+				break;
+
+				case MODE_CURRENT_VOLTAGE :
+				switch (state) {
+					default :
+					break;
+
+					case ST_IDLE :
 					if (MeterReadyFlag == true) {
 						MeterReadyFlag = false;
+						LastPacketAckFlag = false;
 						numBytes = 4 * sizeof(int16_t);
 						ws.binary(ClientID, (uint8_t*)Buffer, numBytes);
 						state = ST_METER_COMPLETE; 
@@ -128,9 +144,9 @@ static void wifi_task(void* pVParameter) {
 							state = ST_TX;
 							}
 						}
-				break;
+					break;
 
-				case ST_TX :
+					case ST_TX :
 					// wait for next packet ready and last packet receive acknowledgement 
 					// before transmitting next packet
 					if ((DataReadyFlag == true) && (LastPacketAckFlag == true)) {
@@ -148,47 +164,74 @@ static void wifi_task(void* pVParameter) {
 							state = ST_TX_COMPLETE;
 							}
 						}						
-				break;
+					break;
 
-				case ST_TX_COMPLETE :
+					case ST_TX_COMPLETE :
 					// wait for last packet receive acknowledgement before transmitting
 					// capture end message
 					if (LastPacketAckFlag == true) {
-						LastPacketAckFlag = false;
 						t2 = micros();
 						ESP_LOGD(TAG,"Socket msg : %dus, Tx ...", t2-t1);
 						ESP_LOGD(TAG,"Socket msg : Tx Complete");
 						msg = MSG_TX_COMPLETE;
 						ws.binary(ClientID, (uint8_t*)&msg, 2); 
-						DataReadyFlag = GateOpenFlag = EndCaptureFlag = MeterReadyFlag = false;
+						reset_flags();
 						state = ST_IDLE;
 						TxSamples = 0;
 						bufferOffset = 0;
 						}
-				break;
+					break;
 
-				case ST_METER_COMPLETE :
-				if (LastPacketAckFlag == true) {
-					LastPacketAckFlag = false;
-					DataReadyFlag = GateOpenFlag = EndCaptureFlag = MeterReadyFlag = false;
-					state = ST_IDLE;
+					case ST_METER_COMPLETE :
+					if (LastPacketAckFlag == true) {
+						reset_flags();
+						state = ST_IDLE;
+						}
+					break;					
 					}
-				break;					
+				break;
+			
+				case MODE_FREQUENCY :
+				switch (state) {
+					default :
+					break;
+
+					case ST_IDLE:
+					if (FreqReadyFlag == true) {
+						FreqReadyFlag = false;
+						LastPacketAckFlag = false;
+						int32_t buffer[2];
+						buffer[0] = MSG_TX_FREQUENCY;
+						buffer[1] = FrequencyHz;
+						numBytes = 2*sizeof(int32_t);
+						ws.binary(ClientID, (uint8_t*)buffer, numBytes);
+						state = ST_FREQ_COMPLETE; 
+						}
+					break;
+
+					case ST_FREQ_COMPLETE :
+					if (LastPacketAckFlag == true) {
+						reset_flags();
+						state = ST_IDLE;
+						}
+					break;					
+					}
+				break;
 				}
-			}	
+			}
 		else {
 			// socket disconnection, reset state and flags
+			reset_flags();
 			state = ST_IDLE;
-			LastPacketAckFlag = DataReadyFlag = GateOpenFlag = EndCaptureFlag = MeterReadyFlag = false;
 			}
 		}
 	vTaskDelete(NULL);		
 	}
 
 
-static void capture_task(void* pvParameter)  {	
-    ESP_LOGI(TAG, "capture_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
-	StartCaptureFlag = false;
+static void current_voltage_task(void* pvParameter)  {	
+    ESP_LOGI(TAG, "current_voltage_task running on core %d with priority %d", xPortGetCoreID(), uxTaskPriorityGet(NULL));
+	CVCaptureFlag = false;
 	Wire.begin(pinSDA,pinSCL); 
 	Wire.setClock(400000);
 	uint16_t id = ina226_read_reg(REG_ID);
@@ -217,24 +260,23 @@ static void capture_task(void* pvParameter)  {
 
 	MaxSamples = (maxBufferBytes - 8)/4;
 	ESP_LOGI(TAG, "Max Samples = %d", MaxSamples);
-
 #if 0
 	ina226_test_capture();	
 #endif
 
 	while (1){
-			if (StartCaptureFlag == true) {
-				StartCaptureFlag = false;
-				if (Measure.nSamples == 0) {
-					ESP_LOGD(TAG,"Capturing gated samples using cfg = 0x%04X, scale %d\n", Measure.cfg, Measure.scale );
+			if (CVCaptureFlag == true) {
+				CVCaptureFlag = false;
+				if (Measure.m.cv_meas.nSamples == 0) {
+					ESP_LOGD(TAG,"Capturing gated samples using cfg = 0x%04X, scale %d\n", Measure.m.cv_meas.cfg, Measure.m.cv_meas.scale );
 					ina226_capture_gated(Measure, Buffer);
 					}
 				else 
-				if (Measure.nSamples == 1) {
+				if (Measure.m.cv_meas.nSamples == 1) {
 					ina226_capture_oneshot(Measure, Buffer);
 					}
 				else {
-					ESP_LOGD(TAG,"Capturing %d samples using cfg = 0x%04X, scale %d\n", Measure.nSamples, Measure.cfg, Measure.scale );
+					ESP_LOGD(TAG,"Capturing %d samples using cfg = 0x%04X, scale %d\n", Measure.m.cv_meas.nSamples, Measure.m.cv_meas.cfg, Measure.m.cv_meas.scale );
 					ina226_capture_triggered(Measure, Buffer);
 					}
 				}

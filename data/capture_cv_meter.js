@@ -54,7 +54,7 @@ function on_ws_close(event) {
 
 function on_ws_message(event) {
 	let view = new Int16Array(event.data);
-	if ((view.length == 4) && (view[0] == 5678)){
+	if ((view.length == 4) && (view[0] == 4444)){
 		iScale = (view[1] == 0 ? 0.05 : 0.002381);
 		i = view[2] * iScale;
 		v = view[3] * vScale;

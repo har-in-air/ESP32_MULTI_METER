@@ -45,7 +45,7 @@ canvas {
 
 h1{
 	color:white;
-	border-radius:0.5em;
+	border-radius:0.25em;
 	text-align:center;
 	font-size:1.0em;
 	padding:0.2em 0.2em;
@@ -97,7 +97,7 @@ input[type="number"] {
 	
 .form-submit {
 	margin-bottom:1rem;
-	border-radius:0.5em;
+	border-radius:0.25em;
 	padding:0.3em 0.3em;
 	background:#0066A2;
 	margin:auto;
@@ -190,7 +190,7 @@ section.range-slider input[type="range"]::-webkit-slider-thumb {
 	}
 
 button {
-	border-radius:0.5em;
+	border-radius:0.25em;
 	background: #0066A2;
 	padding:0.3em 1.0em;
 	color:white;
@@ -214,7 +214,14 @@ button:active {
 	font-size : 8.0em;
 	color: rgb(34, 73, 228);
 	}
-	
+
+.frequency {
+	margin: auto;
+	text-align: center;
+	font-size : 8.0em;
+	color: black;
+	}
+		
 .led-box {
 	height: 24px;
 	width: 24px;

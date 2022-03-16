@@ -67,12 +67,16 @@ static void index_page_handler(AsyncWebServerRequest *request) {
     request->send(LittleFS, "/index.html", String(), false, string_processor);
     }
 
-static void chart_handler(AsyncWebServerRequest *request) {
-    request->send(LittleFS, "/display_chart.html", String(), false, string_processor);
+static void cv_chart_handler(AsyncWebServerRequest *request) {
+    request->send(LittleFS, "/cv_chart.html", String(), false, string_processor);
     }
 
-static void meter_handler(AsyncWebServerRequest *request) {
-    request->send(LittleFS, "/display_meter.html", String(), false, string_processor);
+static void cv_meter_handler(AsyncWebServerRequest *request) {
+    request->send(LittleFS, "/cv_meter.html", String(), false, string_processor);
+    }
+
+static void freq_counter_handler(AsyncWebServerRequest *request) {
+    request->send(LittleFS, "/freq_counter.html", String(), false, string_processor);
     }
 
 static void set_defaults_handler(AsyncWebServerRequest *request) {
@@ -117,6 +121,7 @@ static void wifi_start_as_ap() {
 	WiFi.softAP(szAPSSID);
 	IPAddress ipaddr = WiFi.softAPIP();
 	ESP_LOGI(TAG, "Web Server IP address : %s", ipaddr.toString().c_str());
+	digitalWrite(pinLED, HIGH);
 	}
 
 
@@ -131,6 +136,7 @@ static void wifi_start_as_station() {
 	else {
 		IPAddress ipaddr = WiFi.localIP();
     	ESP_LOGI(TAG, "Web Server IP Address: %s", ipaddr.toString().c_str());
+		digitalWrite(pinLED, LOW);
 		}
 	}
 
@@ -156,8 +162,9 @@ void wifi_init() {
 	pServer->addHandler(&ws);
     pServer->onNotFound(not_found_handler);
     pServer->on("/", HTTP_GET, index_page_handler);
-    pServer->on("/chart", HTTP_GET, chart_handler);
-    pServer->on("/meter", HTTP_GET, meter_handler);
+    pServer->on("/cv_chart", HTTP_GET, cv_chart_handler);
+    pServer->on("/cv_meter", HTTP_GET, cv_meter_handler);
+    pServer->on("/freq_counter", HTTP_GET, freq_counter_handler);
     pServer->on("/defaults", HTTP_GET, set_defaults_handler);
     pServer->on("/get", HTTP_GET, get_handler);
     pServer->on("/restart", HTTP_GET, restart_handler);
@@ -205,10 +212,16 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 			}
 		else
 		if (data[0] == 'm') {
-			StartCaptureFlag = true;
-			Measure.cfg = Config[2].reg;
-			Measure.nSamples = 1;
-			Measure.periodUs = Config[2].periodUs;
+			Measure.mode = MODE_CURRENT_VOLTAGE;
+			Measure.m.cv_meas.cfg = Config[3].reg;
+			Measure.m.cv_meas.nSamples = 1;
+			Measure.m.cv_meas.periodUs = Config[3].periodUs;
+			CVCaptureFlag = true;
+			}
+		else
+		if (data[0] == 'f') {
+			Measure.mode = MODE_FREQUENCY;
+			FreqCaptureFlag = true;
 			}
 		else {
 			const uint8_t size = JSON_OBJECT_SIZE(4);
@@ -235,13 +248,14 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 			int numSamples = captureSeconds*sampleRate;
 			int scale = strtol(szScale, NULL, 10);
 			
-			Measure.cfg = Config[cfgIndex].reg;
-			Measure.scale = scale;
-			Measure.nSamples = numSamples;
-			Measure.periodUs = Config[cfgIndex].periodUs;
+			Measure.mode = MODE_CURRENT_VOLTAGE;
+			Measure.m.cv_meas.cfg = Config[cfgIndex].reg;
+			Measure.m.cv_meas.scale = scale;
+			Measure.m.cv_meas.nSamples = numSamples;
+			Measure.m.cv_meas.periodUs = Config[cfgIndex].periodUs;
 
 			if (strcmp(szAction, "capture") == 0) {
-				StartCaptureFlag = true;
+				CVCaptureFlag = true;
 				}
 			}
 		}
