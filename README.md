@@ -172,7 +172,7 @@ Maximum and minimum current values are more accurately captured.
 * 3.3V TTL level counter input on gpio 34
 * Counter has 1Hz to 40MHz range with 1Hz resolution
 * Independent clock signal generator output on gpio pin 33
-* Connect generator signal output to frequency counter input for counter verification. In the snapshot above, the generator output has been set to 13429Hz and connected to the counter input pin.
+* In the snapshot above, the generator output has been set to 13429Hz and connected to the counter input pin.
 
 # Build Environment
 * Ubuntu 20.04 LTS amdx64
