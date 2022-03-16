@@ -7,6 +7,9 @@ extern volatile int FrequencyHz;
 
 #define MSG_TX_FREQUENCY 5555
 
+extern uint32_t OscFreqHz;
+extern bool OscFreqFlag;
+
 void frequency_task(void* pvParam);
 
 #endif

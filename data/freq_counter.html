@@ -13,7 +13,15 @@
 </div>
 
 <p>
-	<p class="frequency" id="hz"></p>
+
+	<p class="frequency" name="hz" id="hz">0 Hz</p>
+<p>
+	<table>
+		<tr>
+			<td>Oscillator Frequency (Hz)</td>
+			<td><input type="number" style="width:5em" name="oscfreq" id="oscfreq" value="1000" min="1" max="40000000" onchange="on_osc_freq_change(this)"></td>
+		</tr>
+	</table>
 
 </body>
 </html>

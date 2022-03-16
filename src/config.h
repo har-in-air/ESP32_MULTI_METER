@@ -16,6 +16,7 @@
 
 #define MODE_CURRENT_VOLTAGE 	11
 #define MODE_FREQUENCY			22
+#define MODE_INVALID			33
 
 
 typedef struct {

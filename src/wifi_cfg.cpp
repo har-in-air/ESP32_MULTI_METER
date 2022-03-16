@@ -9,6 +9,7 @@
 #include "config.h"
 #include "nv_data.h"
 #include "ina226.h"
+#include "freq_counter.h"
 #include "wifi_cfg.h"
 
 static const char* TAG = "wifi_cfg";
@@ -207,7 +208,7 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
     AwsFrameInfo *info = (AwsFrameInfo*)arg;
     if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
 		if (data[0] == 'x') {
-			//ESP_LOGI(TAG, "Last Packet Ack");
+			//ESP_LOGI(TAG, "ack = x");
 			LastPacketAckFlag = true;
 			}
 		else
@@ -217,11 +218,13 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 			Measure.m.cv_meas.nSamples = 1;
 			Measure.m.cv_meas.periodUs = Config[3].periodUs;
 			CVCaptureFlag = true;
+			//ESP_LOGI(TAG,"cmd = m");
 			}
 		else
 		if (data[0] == 'f') {
 			Measure.mode = MODE_FREQUENCY;
 			FreqCaptureFlag = true;
+			//ESP_LOGI(TAG,"cmd = f");
 			}
 		else {
 			const uint8_t size = JSON_OBJECT_SIZE(4);
@@ -233,29 +236,40 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 				}
 
 			const char *szAction = json["action"];
-			const char *szCfgIndex = json["cfgIndex"];
-			const char *szCaptureSeconds = json["captureSecs"];
-			const char *szScale = json["scale"];
 
-			ESP_LOGI(TAG,"json[\"action\"]= %s\n", szAction);
-			ESP_LOGI(TAG,"json[\"cfgIndex\"]= %s\n", szCfgIndex);
-			ESP_LOGI(TAG,"json[\"captureSecs\"]= %s\n", szCaptureSeconds);
-			ESP_LOGI(TAG,"json[\"scale\"]= %s\n", szScale);
+			if (strcmp(szAction, "cv_capture") == 0) {
+				const char *szCfgIndex = json["cfgIndex"];
+				const char *szCaptureSeconds = json["captureSecs"];
+				const char *szScale = json["scale"];
 
-			int cfgIndex = strtol(szCfgIndex, NULL, 10);
-			int captureSeconds = strtol(szCaptureSeconds, NULL, 10);
-			int sampleRate = 1000000/Config[cfgIndex].periodUs;
-			int numSamples = captureSeconds*sampleRate;
-			int scale = strtol(szScale, NULL, 10);
-			
-			Measure.mode = MODE_CURRENT_VOLTAGE;
-			Measure.m.cv_meas.cfg = Config[cfgIndex].reg;
-			Measure.m.cv_meas.scale = scale;
-			Measure.m.cv_meas.nSamples = numSamples;
-			Measure.m.cv_meas.periodUs = Config[cfgIndex].periodUs;
+				ESP_LOGI(TAG,"json[\"action\"]= %s\n", szAction);
+				ESP_LOGI(TAG,"json[\"cfgIndex\"]= %s\n", szCfgIndex);
+				ESP_LOGI(TAG,"json[\"captureSecs\"]= %s\n", szCaptureSeconds);
+				ESP_LOGI(TAG,"json[\"scale\"]= %s\n", szScale);
 
-			if (strcmp(szAction, "capture") == 0) {
+				int cfgIndex = strtol(szCfgIndex, NULL, 10);
+				int captureSeconds = strtol(szCaptureSeconds, NULL, 10);
+				int sampleRate = 1000000/Config[cfgIndex].periodUs;
+				int numSamples = captureSeconds*sampleRate;
+				int scale = strtol(szScale, NULL, 10);
+				
+				Measure.mode = MODE_CURRENT_VOLTAGE;
+				Measure.m.cv_meas.cfg = Config[cfgIndex].reg;
+				Measure.m.cv_meas.scale = scale;
+				Measure.m.cv_meas.nSamples = numSamples;
+				Measure.m.cv_meas.periodUs = Config[cfgIndex].periodUs;
 				CVCaptureFlag = true;
+				}
+			else 
+			if (strcmp(szAction, "oscfreq") == 0) {
+				Measure.mode = MODE_FREQUENCY;
+				const char *szOscFreqHz = json["freqhz"];
+
+				ESP_LOGI(TAG,"json[\"action\"]= %s\n", szAction);
+				ESP_LOGI(TAG,"json[\"freqhz\"]= %s\n", szOscFreqHz);
+
+				OscFreqHz = (uint32_t)strtol(szOscFreqHz, NULL, 10);
+				OscFreqFlag = true;
 				}
 			}
 		}

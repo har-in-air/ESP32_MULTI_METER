@@ -1,7 +1,7 @@
 
+// Modified from : 
 // BLOG Eletrogate
 // ESP32 Frequency Meter
-// ESP32 DevKit 38 pins + LCD
 // https://blog.eletrogate.com/esp32-frequencimetro-de-precisao
 // Rui Viana and Gustavo Murta august/2020
 #include <Arduino.h>
@@ -28,11 +28,14 @@ volatile bool FreqCaptureFlag = false;
 volatile int  FrequencyHz   = 0;           // frequency value
 volatile SemaphoreHandle_t FreqSemaphore;
 
+uint32_t OscFreqHz = 23456; // 1Hz to 40MHz
+bool OscFreqFlag = false;
+
+
 uint32_t        overflow      = 20000;       // Max Pulse Counter value
 int16_t         pulses        = 0;           // Pulse Counter value
 uint32_t        multPulses    = 0;           // Quantidade de overflows do contador PCNT
-uint32_t        sample_time   = 1000000;     // sample time of 1 second to count pulses
-uint32_t        osc_freq      = 12543;       // Oscillator frequency - initial 12543 Hz (may be 1 Hz to 40 MHz)
+uint32_t        sample_time   = 999955;     // sample time of 1 second to count pulses
 uint32_t        mDuty         = 0;           // Duty value
 uint32_t        resolution    = 0;           // Resolution value
 char            buf[32];                     // Buffer
@@ -54,7 +57,7 @@ static void init_frequency_meter ();
 
 // Initialize Oscillator to test Freq Meter
 static void init_osc_freq() {
-	resolution = (log (80000000 / osc_freq)  / log(2)) / 2 ;     // Calc of resolution of Oscillator
+	resolution = (log (80000000 / OscFreqHz)  / log(2)) / 2 ;     // Calc of resolution of Oscillator
 	if (resolution < 1) resolution = 1;                          // set min resolution 
 	// Serial.println(resolution);                               // Print
 	mDuty = (pow(2, resolution)) / 2;                            // Calc of Duty Cycle 50% of the pulse
@@ -63,7 +66,7 @@ static void init_osc_freq() {
 	ledc_timer_config_t ledc_timer = {};                         // LEDC timer config instance
 
 	ledc_timer.duty_resolution =  ledc_timer_bit_t(resolution);  // Set resolution
-	ledc_timer.freq_hz    = osc_freq;                            // Set Oscillator frequency
+	ledc_timer.freq_hz    = OscFreqHz;                            // Set Oscillator frequency
 	ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;                // Set high speed mode
 	ledc_timer.timer_num = LEDC_TIMER_0;                         // Set LEDC timer index - 0
 	ledc_timer_config(&ledc_timer);                              // Set LEDC Timer config
@@ -186,26 +189,31 @@ void frequency_task(void* pvParam){
 
 		multPulses = 0;                                    // Clear overflow counter
 		// Put your function here, if you want
-		vTaskDelay(10);                                      
+		//vTaskDelay(10);                                      
 		// Put your function here, if you want
 
 		pcnt_counter_clear(PCNT_COUNT_UNIT);               // Clear Pulse Counter
 		esp_timer_start_once(timer_handle, sample_time);   // Initialize High resolution timer (1 sec)
 		gpio_set_level(OUTPUT_CONTROL_GPIO, 1);            // Set enable PCNT count
 
+		if (OscFreqFlag == true) {
+			OscFreqFlag = false;
+			init_osc_freq();
+			}
+
 #if 0
 		String inputString = "";                     // clear temporary string
-		osc_freq = 0;                                // Clear oscillator frequency
+		OscFreqHz = 0;                                // Clear oscillator frequency
 		while (Serial.available()){
 			char inChar = (char)Serial.read();       // Reads a byte on the console
 			inputString += inChar;                   // Add char to string
 			if (inChar == '\n') {                    // If new line (enter)
-				osc_freq = inputString.toInt();      // Converts String into integer value
+				OscFreqHz = inputString.toInt();      // Converts String into integer value
 				inputString = "";                    // Clear string
 				}
 			}
 
-		if (osc_freq != 0) {                  // If some value inputted to oscillator frequency
+		if (OscFreqHz != 0) {                  // If some value inputted to oscillator frequency
 			init_osc_freq ();                 // reconfigure ledc function - oscillator 
 			}
 #endif			

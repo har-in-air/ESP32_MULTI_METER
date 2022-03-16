@@ -271,7 +271,7 @@ function on_capture_gated_click(event) {
 	let cfgIndex = document.getElementById("cfgInx").value;
 	let scale = document.getElementById("scale").value;
 	let jsonObj = {};
-	jsonObj["action"] = "capture";
+	jsonObj["action"] = "cv_capture";
 	jsonObj["cfgIndex"] = cfgIndex;
 	// set capture seconds to 0 for gated capture
 	jsonObj["captureSecs"] = "0"; 

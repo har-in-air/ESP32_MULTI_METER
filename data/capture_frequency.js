@@ -60,3 +60,11 @@ function on_ws_message(event) {
 	}
 
 
+function on_osc_freq_change(selectObject) {
+	let value = selectObject.value;  
+	let jsonObj = {};
+	jsonObj["action"] = "oscfreq";
+	jsonObj["freqhz"] = value;
+	websocket.send(JSON.stringify(jsonObj));
+	}	
+	

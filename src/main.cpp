@@ -192,36 +192,37 @@ static void wifi_task(void* pVParameter) {
 				break;
 			
 				case MODE_FREQUENCY :
-				switch (state) {
-					default :
-					break;
+					switch (state) {
+						default :
+						break;
 
-					case ST_IDLE:
-					if (FreqReadyFlag == true) {
-						FreqReadyFlag = false;
-						LastPacketAckFlag = false;
-						int32_t buffer[2];
-						buffer[0] = MSG_TX_FREQUENCY;
-						buffer[1] = FrequencyHz;
-						numBytes = 2*sizeof(int32_t);
-						ws.binary(ClientID, (uint8_t*)buffer, numBytes);
-						state = ST_FREQ_COMPLETE; 
-						}
-					break;
+						case ST_IDLE:
+						if (FreqReadyFlag == true) {
+							FreqReadyFlag = false;
+							LastPacketAckFlag = false;
+							int32_t buffer[2];
+							buffer[0] = MSG_TX_FREQUENCY;
+							buffer[1] = FrequencyHz;
+							numBytes = 2*sizeof(int32_t);
+							ws.binary(ClientID, (uint8_t*)buffer, numBytes);
+							state = ST_FREQ_COMPLETE; 
+							}
+						break;
 
-					case ST_FREQ_COMPLETE :
-					if (LastPacketAckFlag == true) {
-						reset_flags();
-						state = ST_IDLE;
+						case ST_FREQ_COMPLETE :
+						if (LastPacketAckFlag == true) {
+							reset_flags();
+							state = ST_IDLE;
+							}
+						break;					
 						}
-					break;					
-					}
 				break;
 				}
 			}
 		else {
 			// socket disconnection, reset state and flags
 			reset_flags();
+			Measure.mode = MODE_INVALID;
 			state = ST_IDLE;
 			}
 		}
