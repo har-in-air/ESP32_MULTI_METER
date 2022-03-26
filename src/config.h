@@ -6,9 +6,9 @@
 
 #define pinFET1			18  // switch in the 1.0ohm shunt
 #define pinFET05		19  // switch in the 0.05ohm shunt
-#define pinSDA          21  // I2C interface to INA226
-#define pinSCL          22  //        -do-
-#define pinGate         16   // external current monitor gate signal
+#define pinSDA          22  // I2C interface to INA226
+#define pinSCL          21  //        -do-
+#define pinGate         4   // external current monitor gate signal
 #define pinAlert		5
 
 #define pinLED			14

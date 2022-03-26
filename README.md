@@ -186,11 +186,13 @@ Maximum and minimum current values are more accurately captured.
 
 # Hardware 
 
+<img src="docs/hardware.jpg">
+
 
 * Any ESP32 development board with on-board USB-UART.
-* INA226 current sensor.
+* INA226 current sensor
 * A pi-filter network + low-noise MIC5205 LDO voltage regulator provides the power supply for the INA226.
-* IRF7831 N-chan mosfets (Rds = 4 milli-Ohms),  used to switch shunt resistors for current measurements.
+* Si4925 Dual PMosFet, 2N7002 NMosFets  used to switch shunt resistors for current measurements using high-side metering.
 * PC817 opto-coupler for gated measurement.
 * 0.05ohm 1% shunt resistor for HIGH current scale.
 * 1.0 ohm 1% shunt resistor for LOW current scale.
