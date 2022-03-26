@@ -196,7 +196,7 @@ Maximum and minimum current values are more accurately captured.
 * 0.05ohm 1% shunt resistor for HIGH current scale.
 * 1.0 ohm 1% shunt resistor for LOW current scale.
 * SS56 schottky diode, protects the 1.0 ohm shunt resistor when the LOW current scale is selected.
-* Frequency input signal (3.3V TTL level) on gpio 34.
+* Frequency counter input signal (3.3V TTL level) on gpio 34.
 * Oscillator output signal on gpio 33. 
 
 # Credits
