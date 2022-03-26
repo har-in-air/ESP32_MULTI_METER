@@ -5,9 +5,7 @@ ESP32 development board used to implement WiFi multi-meter with following functi
 * Capture and display load bus voltage and load current, in meter mode or chart recorder mode. Uses INA226 sensor.
 * [Frequency counter with range 1Hz to 40MHz and 1Hz resolution, and independent oscillator (signal generator).](https://blog.eletrogate.com/esp32-frequencimetro-de-precisao)
 
-## Circuit Schematic
 
-[PDF Schematic](docs/esp32_meter_schematic.pdf)
 
 ## Configuration
 
@@ -189,6 +187,7 @@ Maximum and minimum current values are more accurately captured.
 <img src="docs/hardware.jpg">
 
 
+* [Circuit Schematic (PDF)](docs/esp32_meter_schematic.pdf)
 * Any ESP32 development board with on-board USB-UART.
 * INA226 current sensor
 * A pi-filter network + low-noise MIC5205 LDO voltage regulator provides the power supply for the INA226.
