@@ -127,10 +127,69 @@ void ina226_capture_oneshot(volatile MEASURE_t &measure, volatile int16_t* buffe
 	}
 
 
-void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buffer) {
+bool ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_t* buffer) {
+	int16_t data_i16; // shunt and bus readings 
+	int32_t savg, bavg; // averaging accumulators
+	uint16_t reg_bus, reg_shunt;
+	buffer[0] = MSG_TX_CV_METER;
+	buffer[1] = measure.m.cv_meas.scale;
+	switch_scale(measure.m.cv_meas.scale);
+	// conversion ready -> alert pin goes low
+	ina226_write_reg(REG_MASK, 0x0400);
+	// continuous bus and shunt conversion
+	ina226_write_reg(REG_CFG, measure.m.cv_meas.cfg | 0x0007);
+
+	// throw away first sample
+	// pinAlert pulled up to 3v3, active low on conversion complete
+	while (digitalRead(pinAlert) == HIGH);
+	// read shunt and bus ADCs
+	reg_shunt = ina226_read_reg(REG_SHUNT); 
+	reg_bus = ina226_read_reg(REG_VBUS); 
+
+	uint32_t tstart = micros();
+	int inx = 0;
+	savg = bavg = 0;
+	int numSamples = 250000/(int)measure.m.cv_meas.periodUs; 
+	while (inx < numSamples){
+		uint32_t t1 = micros();
+		// pinAlert pulled up to 3v3, active low on conversion complete
+		while (digitalRead(pinAlert) == HIGH);
+		// read shunt and bus ADCs
+		reg_shunt = ina226_read_reg(REG_SHUNT); 
+		reg_bus = ina226_read_reg(REG_VBUS); 
+		
+		data_i16 = (int16_t)reg_shunt;
+		if ((data_i16 == 32767) || (data_i16 == -32768)) {
+			return false; // off-scale reading
+			}
+		savg += i32(data_i16);
+
+		data_i16 = (int16_t)reg_bus;
+		bavg += i32(data_i16);
+		while ((micros() - t1) < measure.m.cv_meas.periodUs);
+		inx++;
+		}
+	uint32_t us = micros() - tstart;
+	measure.m.cv_meas.sampleRate = (1000000.0f*(float)numSamples)/(float)us;
+	// convert shunt adc reading to mA
+	savg = savg / numSamples;
+	measure.m.cv_meas.iavgma = (measure.m.cv_meas.scale == SCALE_HI)? savg*0.05f : savg*0.002381f;
+	// convert bus adc reading to V
+	bavg = bavg / numSamples;
+	measure.m.cv_meas.vavg = bavg*0.00125f; 
+	buffer[2] = (int16_t)savg;
+	buffer[3] = (int16_t)bavg;
+	// vload = vbus
+	ESP_LOGI(TAG,"CV Meter sample : %s %.1fV %.3fmA\n", measure.m.cv_meas.scale == SCALE_LO ? "LO" : "HI", measure.m.cv_meas.vavg, measure.m.cv_meas.iavgma);
+	MeterReadyFlag = true;
+	return true;
+	}
+
+
+void ina226_capture_buffer_triggered(volatile MEASURE_t &measure, volatile int16_t* buffer) {
 	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 
 	int32_t savg, bavg; // averaging accumulators
-	uint16_t reg_mask, reg_bus, reg_shunt;
+	uint16_t reg_bus, reg_shunt;
 	smax = bmax = -32768;
 	smin = bmin = 32767;
 	savg = bavg = 0;
@@ -208,16 +267,16 @@ void ina226_capture_triggered(volatile MEASURE_t &measure, volatile int16_t* buf
 	measure.m.cv_meas.vavg = bavg*0.00125f; 
 	measure.m.cv_meas.vmax = bmax*0.00125f; 
 	measure.m.cv_meas.vmin = bmin*0.00125f; 
-	// vload = vbus - vshunt
-	ESP_LOGI(TAG,"Triggered : 0x%04X %s %.1fHz %.1fV %.3fmA\n", measure.m.cv_meas.cfg, measure.m.cv_meas.scale == SCALE_LO ? "LO" : "HI", measure.m.cv_meas.sampleRate, measure.m.cv_meas.vavg, measure.m.cv_meas.iavgma);
+	// vload = vbus 
+	ESP_LOGI(TAG,"CV Buffer Triggered : 0x%04X %s %.1fHz %.1fV %.3fmA\n", measure.m.cv_meas.cfg, measure.m.cv_meas.scale == SCALE_LO ? "LO" : "HI", measure.m.cv_meas.sampleRate, measure.m.cv_meas.vavg, measure.m.cv_meas.iavgma);
 	}
 
 
 
-void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer) {
+void ina226_capture_buffer_gated(volatile MEASURE_t &measure, volatile int16_t* buffer) {
 	int16_t smax, smin, bmax, bmin, data_i16; // shunt and bus readings 
 	int32_t savg, bavg; // averaging accumulators
-	uint16_t reg_mask, reg_bus, reg_shunt;
+	uint16_t reg_bus, reg_shunt;
 	smax = bmax = -32768;
 	smin = bmin = 32767;
 	savg = bavg = 0;
@@ -300,8 +359,8 @@ void ina226_capture_gated(volatile MEASURE_t &measure, volatile int16_t* buffer)
 	measure.m.cv_meas.vavg = bavg*0.00125f; 
 	measure.m.cv_meas.vmax = bmax*0.00125f; 
 	measure.m.cv_meas.vmin = bmin*0.00125f; 
-	// vload = vbus - vshunt
-	ESP_LOGI(TAG,"Gated : %.3fsecs 0x%04X %s %.1fHz %.1fV %.3fmA\n", (float)us/1000000.0f, measure.m.cv_meas.cfg, measure.m.cv_meas.scale == SCALE_LO ? "LO" : "HI", measure.m.cv_meas.sampleRate, measure.m.cv_meas.vavg, measure.m.cv_meas.iavgma);
+	// vload = vbus
+	ESP_LOGI(TAG,"CV Buffer Gated : %.3fsecs 0x%04X %s %.1fHz %.1fV %.3fmA\n", (float)us/1000000.0f, measure.m.cv_meas.cfg, measure.m.cv_meas.scale == SCALE_LO ? "LO" : "HI", measure.m.cv_meas.sampleRate, measure.m.cv_meas.vavg, measure.m.cv_meas.iavgma);
 	}
 
 

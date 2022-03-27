@@ -214,11 +214,11 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 		else
 		if (data[0] == 'm') {
 			Measure.mode = MODE_CURRENT_VOLTAGE;
-			Measure.m.cv_meas.cfg = Config[3].reg;
 			Measure.m.cv_meas.nSamples = 1;
-			Measure.m.cv_meas.periodUs = Config[3].periodUs;
+			Measure.m.cv_meas.cfg = Config[1].reg;
+			Measure.m.cv_meas.periodUs = Config[1].periodUs;
 			CVCaptureFlag = true;
-			//ESP_LOGI(TAG,"cmd = m");
+			ESP_LOGI(TAG,"cmd = m");
 			}
 		else
 		if (data[0] == 'f') {
@@ -241,11 +241,6 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 				const char *szCfgIndex = json["cfgIndex"];
 				const char *szCaptureSeconds = json["captureSecs"];
 				const char *szScale = json["scale"];
-
-				//ESP_LOGI(TAG,"json[\"action\"]= %s", szAction);
-				//ESP_LOGI(TAG,"json[\"cfgIndex\"]= %s", szCfgIndex);
-				//ESP_LOGI(TAG,"json[\"captureSecs\"]= %s", szCaptureSeconds);
-				//ESP_LOGI(TAG,"json[\"scale\"]= %s", szScale);
 
 				int cfgIndex = strtol(szCfgIndex, NULL, 10);
 				int captureSeconds = strtol(szCaptureSeconds, NULL, 10);

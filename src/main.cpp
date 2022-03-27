@@ -269,16 +269,23 @@ static void current_voltage_task(void* pvParameter)  {
 			if (CVCaptureFlag == true) {
 				CVCaptureFlag = false;
 				if (Measure.m.cv_meas.nSamples == 0) {
-					ESP_LOGD(TAG,"Capturing gated samples using cfg = 0x%04X, scale %d\n", Measure.m.cv_meas.cfg, Measure.m.cv_meas.scale );
-					ina226_capture_gated(Measure, Buffer);
+					ESP_LOGD(TAG,"Capturing gated samples using cfg = 0x%04X, scale %d", Measure.m.cv_meas.cfg, Measure.m.cv_meas.scale );
+					ina226_capture_buffer_gated(Measure, Buffer);
 					}
 				else 
 				if (Measure.m.cv_meas.nSamples == 1) {
-					ina226_capture_oneshot(Measure, Buffer);
+					ESP_LOGD(TAG,"Capturing meter sample using low scale");
+					Measure.m.cv_meas.scale = SCALE_LO;
+					bool res = ina226_capture_averaged_sample(Measure, Buffer);
+					if (!res){
+						Measure.m.cv_meas.scale = SCALE_HI;
+						ESP_LOGD(TAG,"Capturing meter sample using high scale");
+						ina226_capture_averaged_sample(Measure, Buffer);
+						}
 					}
 				else {
-					ESP_LOGD(TAG,"Capturing %d samples using cfg = 0x%04X, scale %d\n", Measure.m.cv_meas.nSamples, Measure.m.cv_meas.cfg, Measure.m.cv_meas.scale );
-					ina226_capture_triggered(Measure, Buffer);
+					ESP_LOGD(TAG,"Capturing %d samples using cfg = 0x%04X, scale %d", Measure.m.cv_meas.nSamples, Measure.m.cv_meas.cfg, Measure.m.cv_meas.scale );
+					ina226_capture_buffer_triggered(Measure, Buffer);
 					}
 				}
 			vTaskDelay(1);

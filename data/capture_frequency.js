@@ -24,7 +24,7 @@ var periodicTrigger = setInterval(trigger_capture, 1000);
 	
 window.onbeforeunload = function() {
 	clearInterval(periodicTrigger);
-	websocket.onclose = function () {}; // disable onclose handler first
+	//websocket.onclose = function () {}; // disable onclose handler first
 	websocket.close();
 	}
 
