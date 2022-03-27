@@ -164,10 +164,13 @@ Maximum and minimum current values are more accurately captured.
 
 <img src="docs/freq_counter.png">
 
-* 3.3V TTL level counter input on gpio 34
-* Counter has 1Hz to 40MHz range with 1Hz resolution
-* Independent clock signal generator output on gpio pin 33
-* In the snapshot above, the generator output has been set to 13429Hz and connected to the counter input pin.
+## Frequency Counter
+* 3.3V TTL level frequency counter input on GPIO 34
+* 1Hz to 40MHz range with 1Hz resolution
+
+## Oscillator
+* Independent oscillator output on GPIO 33
+* For the screen snapshot above, the oscillator output pin was connected to the frequency counter pin, and the oscillator frequency set to 13429Hz.
 
 # Build Environment
 * Ubuntu 20.04 LTS amdx64
