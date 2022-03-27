@@ -165,11 +165,11 @@ Maximum and minimum current values are more accurately captured.
 <img src="docs/freq_counter.png">
 
 ## Frequency Counter
-* 3.3V TTL level frequency counter input on GPIO 34
-* 1Hz to 40MHz range with 1Hz resolution
+* 3.3V TTL level frequency counter input on GPIO 34.
+* 1Hz to 40MHz range with 1Hz resolution.
 
 ## Oscillator
-* Independent oscillator output on GPIO 33
+* Independent oscillator output on GPIO 33.
 * For the screen snapshot above, the oscillator output pin was connected to the frequency counter pin, and the oscillator frequency set to 13429Hz.
 
 # Build Environment
@@ -191,13 +191,13 @@ Maximum and minimum current values are more accurately captured.
 * Any ESP32 development board with on-board USB-UART.
 * INA226 current sensor
 * A pi-filter network + low-noise MIC5205 LDO voltage regulator provides the power supply for the INA226.
-* Si4925 Dual PMosFet, 2N7002 NMosFets  used to switch shunt resistors for current measurements using high-side metering.
+* High-side current metering. Si4925 dual PMOSFET, 2N7002 NMOSFETs are used to switch shunt resistors for low and high scale current measurements.
 * PC817 opto-coupler for gated measurement.
-* 0.05ohm 1% shunt resistor for HIGH current scale.
-* 1.0 ohm 1% shunt resistor for LOW current scale.
+* 0.05ohm 1% shunt resistor for HIGH current scale (0 - 1638mA, 50uA resolution)
+* 1.0 ohm 1% additional shunt resistor for LOW current scale (0 - 78mA, 2.4uA resolution).
 * SS56 schottky diode, protects the 1.0 ohm shunt resistor when the LOW current scale is selected.
-* Frequency counter input signal (3.3V TTL level) on gpio 34.
-* Oscillator output signal on gpio 33. 
+* Frequency counter input signal (3.3V TTL level) on GPIO 34.
+* Independent Oscillator output signal on GPIO 33. 
 
 # Credits
 * [Range switching with FET switches](https://www.youtube.com/watch?v=xSEYPP5Xsi0)
