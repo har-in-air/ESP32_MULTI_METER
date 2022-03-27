@@ -53,20 +53,17 @@ There are two display modes :
 
 ## Current & Voltage Meter
 
-DUT current and voltage are updated every second.
+DUT current and voltage readings are updated every second.
 
 <img src="docs/cv_meter.png">
 
-In this mode, the meter uses a fixed sampling configuration : 
-* vbus ADC conversion time 1.1mS
-* shunt ADC conversion time 1.1mS
-* averages 128 samples for every meter reading 
+The meter uses a fixed sampling configuration : 
+* Vbus ADC conversion time 332uS
+* Shunt ADC conversion time 332uS
+* Averages 0.4 seconds of samples for every meter reading 
 
-The current range is automatically switched. 
-
-If the load current < 78mA, the low range (0 - 78mA) is used  with 2.4uA resolution.
-
-If the load current >= 78mA, the high range (0 - 1638mA) is used  with 50uA resolution.
+The current range is automatically switched. Samples are first captured with the low range setting (0 - 78mA, 2.4uA resolution).
+If any sample is off-scale, the averaging process is restarted with high range (0 - 1638mA, 50uA resolution).
 
 ## Current & Voltage Chart
 
