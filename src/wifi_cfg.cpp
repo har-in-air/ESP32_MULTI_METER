@@ -218,7 +218,7 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 			Measure.m.cv_meas.cfg = Config[1].reg;
 			Measure.m.cv_meas.periodUs = Config[1].periodUs;
 			CVCaptureFlag = true;
-			ESP_LOGI(TAG,"cmd = m");
+			//ESP_LOGI(TAG,"cmd = m");
 			}
 		else
 		if (data[0] == 'f') {
