@@ -149,7 +149,8 @@ bool ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_
 	uint32_t tstart = micros();
 	int inx = 0;
 	savg = bavg = 0;
-	int numSamples = 250000/(int)measure.m.cv_meas.periodUs; 
+	// 0.4s averaging, worst case need to re-measure with high-scale => 0.8 seconds
+	int numSamples = 400000/(int)measure.m.cv_meas.periodUs; 
 	while (inx < numSamples){
 		uint32_t t1 = micros();
 		// pinAlert pulled up to 3v3, active low on conversion complete
