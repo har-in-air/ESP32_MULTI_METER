@@ -185,7 +185,7 @@ void frequency_task(void* pvParam){
         xSemaphoreTake(FreqSemaphore, portMAX_DELAY); 
 		FrequencyHz = (pulses + (multPulses * overflow)) / 2  ;  // Calculation of FrequencyHz
 		FreqReadyFlag = true;
-		Serial.printf("Frequency : %d Hz\n", FrequencyHz);  // Print FrequencyHz with commas
+		//Serial.printf("Frequency : %d Hz\n", FrequencyHz);  // Print FrequencyHz with commas
 
 		multPulses = 0;                                    // Clear overflow counter
 		// Put your function here, if you want
@@ -199,24 +199,7 @@ void frequency_task(void* pvParam){
 		if (OscFreqFlag == true) {
 			OscFreqFlag = false;
 			init_osc_freq();
-			}
-
-#if 0
-		String inputString = "";                     // clear temporary string
-		OscFreqHz = 0;                                // Clear oscillator frequency
-		while (Serial.available()){
-			char inChar = (char)Serial.read();       // Reads a byte on the console
-			inputString += inChar;                   // Add char to string
-			if (inChar == '\n') {                    // If new line (enter)
-				OscFreqHz = inputString.toInt();      // Converts String into integer value
-				inputString = "";                    // Clear string
-				}
-			}
-
-		if (OscFreqHz != 0) {                  // If some value inputted to oscillator frequency
-			init_osc_freq ();                 // reconfigure ledc function - oscillator 
-			}
-#endif			
+			}		
 		}
 	vTaskDelete(NULL);
 }

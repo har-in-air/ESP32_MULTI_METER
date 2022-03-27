@@ -257,7 +257,7 @@ function on_capture_click(event) {
 	let captureSeconds = document.getElementById("captureSecs").value;
 	let scale = document.getElementById("scale").value;
 	let jsonObj = {};
-	jsonObj["action"] = "capture";
+	jsonObj["action"] = "cv_capture";
 	jsonObj["cfgIndex"] = cfgIndex;
 	jsonObj["captureSecs"] = captureSeconds.toString();
 	jsonObj["scale"] = scale;

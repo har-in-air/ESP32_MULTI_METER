@@ -242,10 +242,10 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 				const char *szCaptureSeconds = json["captureSecs"];
 				const char *szScale = json["scale"];
 
-				ESP_LOGI(TAG,"json[\"action\"]= %s\n", szAction);
-				ESP_LOGI(TAG,"json[\"cfgIndex\"]= %s\n", szCfgIndex);
-				ESP_LOGI(TAG,"json[\"captureSecs\"]= %s\n", szCaptureSeconds);
-				ESP_LOGI(TAG,"json[\"scale\"]= %s\n", szScale);
+				//ESP_LOGI(TAG,"json[\"action\"]= %s", szAction);
+				//ESP_LOGI(TAG,"json[\"cfgIndex\"]= %s", szCfgIndex);
+				//ESP_LOGI(TAG,"json[\"captureSecs\"]= %s", szCaptureSeconds);
+				//ESP_LOGI(TAG,"json[\"scale\"]= %s", szScale);
 
 				int cfgIndex = strtol(szCfgIndex, NULL, 10);
 				int captureSeconds = strtol(szCaptureSeconds, NULL, 10);
@@ -258,6 +258,11 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 				Measure.m.cv_meas.scale = scale;
 				Measure.m.cv_meas.nSamples = numSamples;
 				Measure.m.cv_meas.periodUs = Config[cfgIndex].periodUs;
+				ESP_LOGI(TAG,"Mode = %d", Measure.mode);
+				ESP_LOGI(TAG,"cfgIndex = %d", cfgIndex);
+				ESP_LOGI(TAG,"scale = %d", scale);
+				ESP_LOGI(TAG,"nSamples = %d", numSamples);
+				ESP_LOGI(TAG,"periodUs = %d", Config[cfgIndex].periodUs);
 				CVCaptureFlag = true;
 				}
 			else 
