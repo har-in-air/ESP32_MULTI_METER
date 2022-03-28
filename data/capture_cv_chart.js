@@ -164,7 +164,7 @@ function on_window_load(event) {
 	}
 
 window.onbeforeunload = function() {
-	//websocket.onclose = function () {}; // disable onclose handler first
+	websocket.onclose = function () {}; // disable onclose handler first
 	websocket.close();
 	}
 	
