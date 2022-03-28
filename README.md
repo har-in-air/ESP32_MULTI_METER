@@ -4,8 +4,9 @@ ESP32 development board used to implement WiFi multi-meter with following functi
 
 * Capture and display load bus voltage and load current, in meter mode or chart recorder mode. Uses INA226 sensor.
 * [Frequency counter with range 1Hz to 40MHz and 1Hz resolution, and independent oscillator (signal generator).](https://blog.eletrogate.com/esp32-frequencimetro-de-precisao)
+* Uses websockets for control and data communication between browser and ESP32.
 
-
+Tested with Chrome and Opera browsers on Ubuntu 20.04 LTS.
 
 ## Configuration
 
