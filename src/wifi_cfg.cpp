@@ -16,11 +16,12 @@ static const char* TAG = "wifi_cfg";
 
 extern const char* FwRevision;
 
-IPAddress local_IP(192, 168, 43, 235);
-IPAddress gateway(192, 168, 43, 1);
-IPAddress subnet(255, 255, 255, 0);
-IPAddress primaryDNS(8, 8, 8, 8);
-IPAddress secondaryDNS(8, 8, 4, 4);
+// configure static IP address for connecting as station
+static IPAddress Local_IP(192, 168, 43, 236);
+static IPAddress Gateway(192, 168, 43, 1);
+static IPAddress Subnet(255, 255, 255, 0);
+static IPAddress PrimaryDNS(8, 8, 8, 8);
+static IPAddress SecondaryDNS(8, 8, 4, 4);
 
 // stand-alone WiFi Access Point SSID (no password)
 const char* szAPSSID = "ESP32_METER";
@@ -135,7 +136,7 @@ static void wifi_start_as_station_static_IP() {
 	ESP_LOGI(TAG,"Connecting as station static IP to Access Point with SSID=%s\n", Options.ssid);
 	uint32_t startTick = millis();
 	// Configures static IP address
-  	if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+  	if (!WiFi.config(Local_IP, Gateway, Subnet, PrimaryDNS, SecondaryDNS)) {
     	ESP_LOGI(TAG,"Station static IP config failure");
   		}
     WiFi.begin(Options.ssid.c_str(), Options.password.c_str());
