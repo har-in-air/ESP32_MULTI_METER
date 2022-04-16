@@ -16,6 +16,12 @@ static const char* TAG = "wifi_cfg";
 
 extern const char* FwRevision;
 
+IPAddress local_IP(192, 168, 43, 235);
+IPAddress gateway(192, 168, 43, 1);
+IPAddress subnet(255, 255, 255, 0);
+IPAddress primaryDNS(8, 8, 8, 8);
+IPAddress secondaryDNS(8, 8, 4, 4);
+
 // stand-alone WiFi Access Point SSID (no password)
 const char* szAPSSID = "ESP32_METER";
 
@@ -34,7 +40,7 @@ void socket_event_handler(AsyncWebSocket *server,
 
 static void wifi_start_as_ap();
 static void wifi_start_as_station();
-
+static void wifi_start_as_station_static_IP();
 static String string_processor(const String& var);
 static void not_found_handler(AsyncWebServerRequest *request);
 static void index_page_handler(AsyncWebServerRequest *request);
@@ -125,18 +131,39 @@ static void wifi_start_as_ap() {
 	digitalWrite(pinLED, HIGH);
 	}
 
-
-static void wifi_start_as_station() {
-	ESP_LOGI(TAG,"Connecting as station to Access Point with SSID=%s\n", Options.ssid);
-    WiFi.mode(WIFI_STA);
+static void wifi_start_as_station_static_IP() {
+	ESP_LOGI(TAG,"Connecting as station static IP to Access Point with SSID=%s\n", Options.ssid);
+	uint32_t startTick = millis();
+	// Configures static IP address
+  	if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+    	ESP_LOGI(TAG,"Station static IP config failure");
+  		}
     WiFi.begin(Options.ssid.c_str(), Options.password.c_str());
-    if (WiFi.waitForConnectResult(10000UL) != WL_CONNECTED) {
-    	ESP_LOGI(TAG,"Connection failed!\n");
+    if (WiFi.waitForConnectResult(4000UL) != WL_CONNECTED) {
+    	ESP_LOGI(TAG,"Connection failed!");
     	wifi_start_as_ap();
     	}
 	else {
 		IPAddress ipaddr = WiFi.localIP();
-    	ESP_LOGI(TAG, "Web Server IP Address: %s", ipaddr.toString().c_str());
+		uint32_t endTick = millis();
+		ESP_LOGI(TAG, "Connected in %.2f seconds with IP addr %s", (float)(endTick - startTick)/1000.0f, ipaddr.toString().c_str());
+		digitalWrite(pinLED, LOW);
+		}
+	}
+
+static void wifi_start_as_station() {
+	ESP_LOGI(TAG,"Connecting as station to Access Point with SSID=%s", Options.ssid);
+	uint32_t startTick = millis();
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(Options.ssid.c_str(), Options.password.c_str());
+    if (WiFi.waitForConnectResult(10000UL) != WL_CONNECTED) {
+    	ESP_LOGI(TAG,"Connection failed!");
+    	wifi_start_as_ap();
+    	}
+	else {
+		uint32_t endTick = millis();
+		IPAddress ipaddr = WiFi.localIP();
+		ESP_LOGI(TAG, "Connected in %.2f seconds with IP addr %s", (float)(endTick - startTick)/1000.0f, ipaddr.toString().c_str());
 		digitalWrite(pinLED, LOW);
 		}
 	}
@@ -148,7 +175,7 @@ void wifi_init() {
 		wifi_start_as_ap();
 		}
 	else {
-		wifi_start_as_station();
+		wifi_start_as_station_static_IP();
 		}
 	
 	if (!MDNS.begin("meter")) { // Use http://meter.local for web server page
