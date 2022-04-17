@@ -76,7 +76,7 @@ uint16_t ina226_read_reg(uint8_t regAddr) {
 // Bus ADC resolution is 1.25mV/lsb 
 // Full scale = (32767 * 1.25) mV = 40.95875V
 
-bool ina226_capture_oneshot(volatile MEASURE_t &measure, volatile int16_t* buffer, bool autoScale) {
+bool ina226_capture_oneshot(volatile MEASURE_t &measure, volatile int16_t* buffer, bool manualScale) {
 	uint16_t reg_bus, reg_shunt;
 	switch_scale(measure.m.cv_meas.scale);
 	// conversion ready -> alert pin goes low
@@ -115,17 +115,17 @@ bool ina226_capture_oneshot(volatile MEASURE_t &measure, volatile int16_t* buffe
 	measure.m.cv_meas.vmin = measure.m.cv_meas.vavg;
 	measure.m.cv_meas.sampleRate = 1000000.0f/(float)us;
 	ESP_LOGI(TAG,"OneShot : [0x%04X scale=%d] %dus %dHz %.1fV %.3fmA\n", measure.m.cv_meas.cfg, measure.m.cv_meas.scale, us, (int)(measure.m.cv_meas.sampleRate+0.5f), measure.m.cv_meas.vavg, measure.m.cv_meas.iavgma);
-	if (autoScale == false) {
+	if (manualScale == true) {
 		MeterReadyFlag = true;
 		}
 	else {
-		MeterReadyFlag = (offScale == false) ? true : false;
+		MeterReadyFlag = !offScale;
 		}
-	return  offScale == true ? false : true; // return false for off-scale current reading
+	return  !offScale; // return false for off-scale current reading
 	}
 
 
-bool ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_t* buffer, bool autoScale) {
+bool ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_t* buffer, bool manualScale) {
 	int16_t data_i16; // shunt and bus readings 
 	int32_t savg, bavg; // averaging accumulators
 	uint16_t reg_bus, reg_shunt;
@@ -182,13 +182,13 @@ bool ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_
 	buffer[4] = offScale == true ? 1 : 0;
 	// vload = vbus
 	ESP_LOGI(TAG,"CV Meter sample : %s %.1fV %.3fmA\n", measure.m.cv_meas.scale == SCALE_LO ? "LO" : "HI", measure.m.cv_meas.vavg, measure.m.cv_meas.iavgma);
-	if (autoScale == false) {
+	if (manualScale == true) {
 		MeterReadyFlag = true;
 		}
 	else {
-		MeterReadyFlag = (offScale == false) ? true : false;
+		MeterReadyFlag = !offScale;
 		}
-	return offScale == true ? false : true;
+	return !offScale;
 	}
 
 
@@ -383,6 +383,6 @@ void ina226_test_capture() {
 	Measure.m.cv_meas.scale = SCALE_HI;
 	for (int inx = 0; inx < NUM_CFG; inx++) {
 		Measure.m.cv_meas.cfg = Config[inx].reg;
-		ina226_capture_oneshot(Measure, Buffer, false);
+		ina226_capture_oneshot(Measure, Buffer, true);
 		}
 	}

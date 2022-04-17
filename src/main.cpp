@@ -278,24 +278,24 @@ static void current_voltage_task(void* pvParameter)  {
 					if (scalemode == SCALE_LO) {
 						ESP_LOGD(TAG,"Capturing meter sample using low scale");
 						Measure.m.cv_meas.scale = SCALE_LO;
-						bool res = ina226_capture_averaged_sample(Measure, Buffer, false);
+						bool res = ina226_capture_averaged_sample(Measure, Buffer, true);
 						if (!res) ESP_LOGD(TAG,"Warning : offscale reading");
 						}
 					else 
 					if (scalemode == SCALE_HI) {
 						ESP_LOGD(TAG,"Capturing meter sample using hi scale");
 						Measure.m.cv_meas.scale = SCALE_HI;
-						bool res = ina226_capture_averaged_sample(Measure, Buffer, false);
+						bool res = ina226_capture_averaged_sample(Measure, Buffer, true);
 						if (!res) ESP_LOGD(TAG,"Warning : offscale reading");
 						}
 					else {
 						ESP_LOGD(TAG,"Capturing meter sample autorange LO");
 						Measure.m.cv_meas.scale = SCALE_LO;
-						bool res = ina226_capture_averaged_sample(Measure, Buffer, true);
+						bool res = ina226_capture_averaged_sample(Measure, Buffer, false);
 						if (!res){
 							Measure.m.cv_meas.scale = SCALE_HI;
 							ESP_LOGD(TAG,"Capturing meter sample autorange HI");
-							res = ina226_capture_averaged_sample(Measure, Buffer, false);
+							res = ina226_capture_averaged_sample(Measure, Buffer, true);
 							if (!res) ESP_LOGD(TAG,"Warning : offscale reading");
 							}
 						}
