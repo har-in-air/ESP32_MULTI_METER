@@ -71,6 +71,8 @@ Select the current scale from one of the following options :
 If you select `Auto`, samples are first captured with the LO range setting, as this has higher resolution.
 If any sample is off-scale, the averaging process is restarted with HI range configured.
 
+Do not select the `LO` or `Auto` option if the expected current is high and the DUT cannot tolerate the voltage drop across the 1ohm `LO` current range shunt resistor.
+
 For any selected option, if the final averaging process used off-scale samples, the current display background  will flash orange as a warning.
 
 ## Current & Voltage Chart
