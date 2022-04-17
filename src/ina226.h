@@ -13,6 +13,7 @@
 
 #define SCALE_HI	0 // Shunt R = 0.05 ohms, Full scale = 1.64A
 #define SCALE_LO	1 // Shunt R = 1.05 ohms, Full scale = 78mA
+#define SCALE_AUTO	2 // Automatically switch
 
 #define MSG_GATE_OPEN	1234
 #define MSG_TX_START	1111
@@ -39,10 +40,10 @@ extern volatile bool MeterReadyFlag;
 void	ina226_write_reg(uint8_t regAddr, uint16_t data);
 uint16_t ina226_read_reg(uint8_t regAddr);
 void	ina226_reset();
-bool 	ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_t* buffer);
+bool	ina226_capture_oneshot(volatile MEASURE_t &measure, volatile int16_t* buffer, bool autoScale);
+bool 	ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_t* buffer, bool autoScale);
 void 	ina226_capture_buffer_triggered(volatile MEASURE_t &measure, volatile int16_t* buffer);
 void 	ina226_capture_buffer_gated(volatile MEASURE_t &measure, volatile int16_t* buffer);
-void	ina226_capture_oneshot(volatile MEASURE_t &measure, volatile int16_t* buffer);
 void	ina226_test_capture();
 
 #endif

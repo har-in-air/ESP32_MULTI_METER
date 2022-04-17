@@ -63,8 +63,15 @@ The meter uses a fixed sampling configuration :
 * Shunt ADC conversion time 332uS
 * Averages 0.4 seconds of samples for every meter reading 
 
-The current range is automatically switched. Samples are first captured with the low range setting (0 - 78mA, 2.4uA resolution).
-If any sample is off-scale, the averaging process is restarted with high range (0 - 1638mA, 50uA resolution).
+Select the current scale from one of the following options :
+* HI : Full-scale 1638.35mA, resolution 50uA
+* LO : Full-scale 78.017mA, resolution 2.4uA
+* Auto
+
+If you select `Auto`, samples are first captured with the LO range setting, as this has higher resolution.
+If any sample is off-scale, the averaging process is restarted with HI range configured.
+
+For any selected option, if the final averaging process used off-scale samples, the current display background  will flash orange as a warning.
 
 ## Current & Voltage Chart
 
@@ -75,11 +82,11 @@ Sample rate options :
 * 1000Hz : no sample averaging, vbus ADC conversion time 332uS, shunt ADC conversion time 332uS.
 * 400Hz : averaging 4 samples, vbus ADC conversion time 140uS, shunt ADC conversion time 140uS.
 
-Current range options :
-* 0 - 78mA with 2.4uA resolution
-* 0 - 1638mA with 50uA resolution
+Current scale options :
+* HI : Full-scale 1638.35mA, 50uA resolution
+* LO : Full-scale 78.017mA, 2.4uA resolution
 
-In Chart Display mode, we need to manually select the current range. Auto-ranging is not possible due to the high sampling rate.
+In Chart Display mode, current auto-ranging is not possible due to the high sampling rate.
 
 Click on the legends `ma` and `V` above the plot to toggle the display of the corresponding data.
 

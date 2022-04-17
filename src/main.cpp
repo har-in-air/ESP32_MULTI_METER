@@ -8,7 +8,7 @@
 #include "ina226.h"
 #include "freq_counter.h"
 
-const char* FwRevision = "0.96";
+const char* FwRevision = "0.97";
 static const char* TAG = "main";
 
 volatile int TxSamples;
@@ -117,7 +117,7 @@ static void wifi_task(void* pVParameter) {
 					if (MeterReadyFlag == true) {
 						MeterReadyFlag = false;
 						LastPacketAckFlag = false;
-						numBytes = 4 * sizeof(int16_t);
+						numBytes = 5 * sizeof(int16_t);
 						ws.binary(ClientID, (uint8_t*)Buffer, numBytes);
 						state = ST_METER_COMPLETE; 
 						}
@@ -274,13 +274,30 @@ static void current_voltage_task(void* pvParameter)  {
 					}
 				else 
 				if (Measure.m.cv_meas.nSamples == 1) {
-					ESP_LOGD(TAG,"Capturing meter sample using low scale");
-					Measure.m.cv_meas.scale = SCALE_LO;
-					bool res = ina226_capture_averaged_sample(Measure, Buffer);
-					if (!res){
+					int scalemode = Measure.m.cv_meas.scale;
+					if (scalemode == SCALE_LO) {
+						ESP_LOGD(TAG,"Capturing meter sample using low scale");
+						Measure.m.cv_meas.scale = SCALE_LO;
+						bool res = ina226_capture_averaged_sample(Measure, Buffer, false);
+						if (!res) ESP_LOGD(TAG,"Warning : offscale reading");
+						}
+					else 
+					if (scalemode == SCALE_HI) {
+						ESP_LOGD(TAG,"Capturing meter sample using hi scale");
 						Measure.m.cv_meas.scale = SCALE_HI;
-						ESP_LOGD(TAG,"Capturing meter sample using high scale");
-						ina226_capture_averaged_sample(Measure, Buffer);
+						bool res = ina226_capture_averaged_sample(Measure, Buffer, false);
+						if (!res) ESP_LOGD(TAG,"Warning : offscale reading");
+						}
+					else {
+						ESP_LOGD(TAG,"Capturing meter sample autorange LO");
+						Measure.m.cv_meas.scale = SCALE_LO;
+						bool res = ina226_capture_averaged_sample(Measure, Buffer, true);
+						if (!res){
+							Measure.m.cv_meas.scale = SCALE_HI;
+							ESP_LOGD(TAG,"Capturing meter sample autorange HI");
+							res = ina226_capture_averaged_sample(Measure, Buffer, false);
+							if (!res) ESP_LOGD(TAG,"Warning : offscale reading");
+							}
 						}
 					}
 				else {

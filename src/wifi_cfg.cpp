@@ -245,6 +245,7 @@ void socket_handle_message(void *arg, uint8_t *data, size_t len) {
 			Measure.m.cv_meas.nSamples = 1;
 			Measure.m.cv_meas.cfg = Config[1].reg;
 			Measure.m.cv_meas.periodUs = Config[1].periodUs;
+			Measure.m.cv_meas.scale = (int)(data[1] - '0');
 			CVCaptureFlag = true;
 			//ESP_LOGI(TAG,"cmd = m");
 			}

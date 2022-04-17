@@ -11,11 +11,27 @@
 <div style="align-items:center; width:60%; margin:auto;">	
 <h1>Current & Voltage Meter</h1>
 </div>
-<p>
-
+<br>	
+	<div class="capture" >
+		<table>
+		<tr>
+		<td><label for="scale">Current Full-Scale [Resolution]</label></td>
+		<td>
+			<select id="scale" name="scale" class="scale-select">
+				<option value="0" "selected">1638.35mA [50uA]</option>
+				<option value="1">78.017mA [2.4uA]</option>
+				<option value="2">Auto</option>
+			</select>
+		</td>
+		</tr>
+		</table>
+	</div>
+<br>
 	<p class="current" id="ma"></p>
-<p>	
+<br>
+
 	<p class="voltage" id="volts"></p>
+
 
 </body>
 </html>

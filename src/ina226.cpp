@@ -76,58 +76,56 @@ uint16_t ina226_read_reg(uint8_t regAddr) {
 // Bus ADC resolution is 1.25mV/lsb 
 // Full scale = (32767 * 1.25) mV = 40.95875V
 
-void ina226_capture_oneshot(volatile MEASURE_t &measure, volatile int16_t* buffer) {
-	switch_scale(SCALE_LO);
+bool ina226_capture_oneshot(volatile MEASURE_t &measure, volatile int16_t* buffer, bool autoScale) {
+	uint16_t reg_bus, reg_shunt;
+	switch_scale(measure.m.cv_meas.scale);
 	// conversion ready -> alert pin goes low
 	ina226_write_reg(REG_MASK, 0x0400);
 	// configure for one-shot bus and shunt adc conversion
 	buffer[0] = MSG_TX_CV_METER;
-	buffer[1] = SCALE_LO;
+	buffer[1] = measure.m.cv_meas.scale;
 	// configure for one-shot bus and shunt adc conversion
 	ina226_write_reg(REG_CFG, measure.m.cv_meas.cfg | 0x0003);
-	uint32_t tstart = micros();
+	// throw away first sample
 	// pinAlert pulled up to 3v3, active low on conversion complete
 	while (digitalRead(pinAlert) == HIGH);
+	// read shunt and bus ADCs
+	reg_shunt = ina226_read_reg(REG_SHUNT); 
+	reg_bus = ina226_read_reg(REG_VBUS); 
+
+	uint32_t tstart = micros();
 	ina226_write_reg(REG_CFG, measure.m.cv_meas.cfg | 0x0003);
 	while (digitalRead(pinAlert) == HIGH);
 	uint32_t tend = micros();
 	// measure the INA226 total conversion time for shunt and bus adcs
 	uint32_t us = tend - tstart;
-
-	uint16_t reg_bus, reg_shunt;
 	// read shunt and bus ADCs
 	reg_shunt = ina226_read_reg(REG_SHUNT);
 	reg_bus = ina226_read_reg(REG_VBUS); 
 	int16_t shunt_i16 = (int16_t)reg_shunt;
-	measure.m.cv_meas.iavgma = shunt_i16*0.002381f;
-	measure.m.cv_meas.scale = SCALE_LO;
-	if (measure.m.cv_meas.iavgma > 78.0f) {
-		switch_scale(SCALE_HI);
-		buffer[1] = SCALE_HI;
-		ina226_write_reg(REG_CFG, measure.m.cv_meas.cfg | 0x0003);
-		// pinAlert pulled up to 3v3, active low on conversion complete
-		while (digitalRead(pinAlert) == HIGH);
-		reg_shunt = ina226_read_reg(REG_SHUNT);
-		shunt_i16 = (int16_t)reg_shunt;
-		reg_bus = ina226_read_reg(REG_VBUS); 
-		measure.m.cv_meas.iavgma = shunt_i16*0.05f;
-		measure.m.cv_meas.scale = SCALE_HI;
-		}
-
+	bool offScale = ((shunt_i16 == 32767) || (shunt_i16 == -32768)) ? true : false;
 	buffer[2] = shunt_i16;
 	buffer[3] = (int16_t)reg_bus;
+	buffer[4] = offScale ? 1 : 0;
+	measure.m.cv_meas.iavgma = (measure.m.cv_meas.scale == SCALE_HI)? shunt_i16*0.05f : shunt_i16*0.002381f;
 	measure.m.cv_meas.iminma = measure.m.cv_meas.iavgma;
 	measure.m.cv_meas.imaxma = measure.m.cv_meas.iavgma;
 	measure.m.cv_meas.vavg = reg_bus*0.00125f; 
 	measure.m.cv_meas.vmax = measure.m.cv_meas.vavg;
 	measure.m.cv_meas.vmin = measure.m.cv_meas.vavg;
 	measure.m.cv_meas.sampleRate = 1000000.0f/(float)us;
-	MeterReadyFlag = true;
-	ESP_LOGI(TAG,"OneShot : 0x%04X %s %dus %dHz %.1fV %.3fmA\n", measure.m.cv_meas.cfg, measure.m.cv_meas.scale == SCALE_LO ? "LO" : "HI", us, (int)(measure.m.cv_meas.sampleRate+0.5f), measure.m.cv_meas.vavg, measure.m.cv_meas.iavgma);
+	ESP_LOGI(TAG,"OneShot : [0x%04X scale=%d] %dus %dHz %.1fV %.3fmA\n", measure.m.cv_meas.cfg, measure.m.cv_meas.scale, us, (int)(measure.m.cv_meas.sampleRate+0.5f), measure.m.cv_meas.vavg, measure.m.cv_meas.iavgma);
+	if (autoScale == false) {
+		MeterReadyFlag = true;
+		}
+	else {
+		MeterReadyFlag = (offScale == false) ? true : false;
+		}
+	return  offScale == true ? false : true; // return false for off-scale current reading
 	}
 
 
-bool ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_t* buffer) {
+bool ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_t* buffer, bool autoScale) {
 	int16_t data_i16; // shunt and bus readings 
 	int32_t savg, bavg; // averaging accumulators
 	uint16_t reg_bus, reg_shunt;
@@ -151,6 +149,7 @@ bool ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_
 	savg = bavg = 0;
 	// 0.4s averaging, worst case need to re-measure with high-scale => 0.8 seconds
 	int numSamples = 400000/(int)measure.m.cv_meas.periodUs; 
+	bool offScale = false;
 	while (inx < numSamples){
 		uint32_t t1 = micros();
 		// pinAlert pulled up to 3v3, active low on conversion complete
@@ -161,7 +160,7 @@ bool ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_
 		
 		data_i16 = (int16_t)reg_shunt;
 		if ((data_i16 == 32767) || (data_i16 == -32768)) {
-			return false; // off-scale reading
+			offScale = true; 
 			}
 		savg += i32(data_i16);
 
@@ -180,10 +179,16 @@ bool ina226_capture_averaged_sample(volatile MEASURE_t &measure, volatile int16_
 	measure.m.cv_meas.vavg = bavg*0.00125f; 
 	buffer[2] = (int16_t)savg;
 	buffer[3] = (int16_t)bavg;
+	buffer[4] = offScale == true ? 1 : 0;
 	// vload = vbus
 	ESP_LOGI(TAG,"CV Meter sample : %s %.1fV %.3fmA\n", measure.m.cv_meas.scale == SCALE_LO ? "LO" : "HI", measure.m.cv_meas.vavg, measure.m.cv_meas.iavgma);
-	MeterReadyFlag = true;
-	return true;
+	if (autoScale == false) {
+		MeterReadyFlag = true;
+		}
+	else {
+		MeterReadyFlag = (offScale == false) ? true : false;
+		}
+	return offScale == true ? false : true;
 	}
 
 
@@ -378,6 +383,6 @@ void ina226_test_capture() {
 	Measure.m.cv_meas.scale = SCALE_HI;
 	for (int inx = 0; inx < NUM_CFG; inx++) {
 		Measure.m.cv_meas.cfg = Config[inx].reg;
-		ina226_capture_oneshot(Measure, Buffer);
+		ina226_capture_oneshot(Measure, Buffer, false);
 		}
 	}
